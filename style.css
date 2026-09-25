@@ -135,6 +135,21 @@ main { flex: 1; padding: 2rem clamp(1rem, 4vw, 3rem); }
 .combo span { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
 .combo:hover { border-color: var(--muted); }
 .combo[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.notes { margin-top: 1.25rem; max-width: 70ch; }
+.notes h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1.1rem; margin: 0 0 0.5rem; }
+.notes blockquote {
+  margin: 0 0 0.75rem; padding: 0.75rem 1rem;
+  background: var(--panel); border-left: 3px solid var(--gold);
+}
+.notes blockquote p { margin: 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+.notes .more {
+  margin-top: 0.4rem; padding: 0; background: none; border: 0;
+  color: var(--gold); font-size: 0.9rem; text-decoration: underline; text-underline-offset: 3px;
+}
+.score .caveat {
+  margin: 1rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--line);
+  font-size: 0.8rem; color: var(--muted);
+}
 .bars .warn { grid-column: 1 / -1; color: #d8a25e; font-size: 0.8rem; }
 
 .actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
