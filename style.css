@@ -37,6 +37,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
   margin: 0;
   letter-spacing: 0.01em;
 }
+.brand-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.tip {
+  text-decoration: none; font-weight: 600;
+  padding: 0.5rem 0.9rem; border: 1px solid var(--gold); border-radius: 4px; color: var(--gold);
+}
+.tip:hover { background: var(--gold); color: var(--bg); }
 .tagline { margin: 0.5rem 0 1.25rem; color: var(--muted); max-width: 60ch; }
 
 .search { position: relative; max-width: 560px; }
@@ -145,6 +151,10 @@ main { flex: 1; padding: 2rem clamp(1rem, 4vw, 3rem); }
 .notes .more {
   margin-top: 0.4rem; padding: 0; background: none; border: 0;
   color: var(--gold); font-size: 0.9rem; text-decoration: underline; text-underline-offset: 3px;
+}
+.score .est {
+  margin: 0 0 1rem; padding: 0.6rem 0.75rem; font-size: 0.85rem;
+  background: var(--perk-deep); border-left: 3px solid var(--perk);
 }
 .score .caveat {
   margin: 1rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--line);
