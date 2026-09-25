@@ -124,6 +124,19 @@ main { flex: 1; padding: 2rem clamp(1rem, 4vw, 3rem); }
 .perk-detail p { margin: 0; }
 .perk-detail .stat { margin-top: 0.4rem; font-size: 0.9rem; color: var(--muted); }
 
+.combos { margin-top: 1rem; max-width: 70ch; }
+.combos h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1.1rem; margin: 0 0 0.5rem; }
+.combo-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.combo {
+  display: inline-flex; align-items: baseline; gap: 0.5rem;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  padding: 0.4rem 0.7rem; font-weight: 500;
+}
+.combo span { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+.combo:hover { border-color: var(--muted); }
+.combo[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.bars .warn { grid-column: 1 / -1; color: #d8a25e; font-size: 0.8rem; }
+
 .actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
 .ghost { background: transparent; border: 1px solid var(--line); border-radius: 4px; padding: 0.5rem 0.9rem; }
 .ghost:hover { border-color: var(--muted); }
