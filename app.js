@@ -218,9 +218,11 @@
     });
     const usage = state.weapon.modes[state.mode].usage;
     const ratio = usageRatio(state.weapon, state.colStart, usage, state.picks);
-    const total = blendUsage(state.weapon, Math.round(100 * (0.55 * best + 0.45 * popularity)), ratio);
+    const base = Math.round(100 * (0.55 * best + 0.45 * popularity));
+    const total = blendUsage(state.weapon, base, ratio);
     return {
-      usageN: ratio !== null ? Math.round(usage.n) : 0,
+      usageN: usage && usage.n >= MIN_USAGE ? Math.round(usage.n) : 0,
+      usageChange: total - base,
       total, perCol, best, matches,
       closest: bestIdx >= 0 ? s.rolls[bestIdx] : null,
       noteRoll: matchIdx >= 0 ? matchIdx : bestIdx,
@@ -380,6 +382,24 @@
       usageLine(i) + pairLine(i, s);
   }
 
+  // "Players: on 38% of copies" under each perk in the score breakdown
+  function usedOn(i) {
+    const u = state.weapon.modes[state.mode].usage;
+    if (!u || u.n < MIN_USAGE || i === null) return '';
+    return `<small class="used">Players: on ${Math.round((100 * (u.perks[i] || 0)) / u.n)}% of copies</small>`;
+  }
+
+  function usageSummary(r) {
+    if (!r.usageN) return '';
+    const where = `${r.usageN.toLocaleString()} copies of this gun seen in ${modeWord() || 'recent'} matches`;
+    let effect;
+    if (r.usageChange > 0) effect = `Players run these perks a lot, which raised the score by ${r.usageChange}.`;
+    else if (r.usageChange < 0) effect = `Players rarely run these perks, which lowered this estimated score by ${-r.usageChange}.`;
+    else effect = state.weapon.estimated ? 'It didn\'t change this score.'
+      : 'It didn\'t change this score (usage only counts when it helps a gun with curator rolls).';
+    return `<p class="usage-line">Real usage: ${where}. ${effect}</p>`;
+  }
+
   function usageLine(i) {
     const u = state.weapon.modes[state.mode].usage;
     if (!u || u.n < MIN_USAGE) return '';
@@ -430,8 +450,8 @@
       const v = r.perCol[ci];
       if (v === null || v === undefined) return '';
       const pct = Math.round(v * 100);
-      const warn = cs[ci].unpaired
-        ? '<small class="warn">Not paired with your other picks in any recommended roll</small>' : '';
+      const warn = (cs[ci].unpaired
+        ? '<small class="warn">Not paired with your other picks in any recommended roll</small>' : '') + usedOn(state.picks[ci]);
       return `<li><span>${esc(col.label)}: ${esc(perkByIndex(state.picks[ci]).name)}</span><span>${pct}</span>
         <div class="track"><div class="fill${pct === 100 ? ' max' : ''}" style="width:${pct}%"></div></div>${warn}</li>`;
     }).join('');
@@ -449,7 +469,7 @@
       `<p class="num">${r.total}<small>/100</small></p>` +
       `<p class="grade">${label}</p>` +
       `<p class="why">${why}${missing ? ` ${missing} column${missing > 1 ? 's' : ''} still empty.` : ''}</p>` +
-      (r.usageN ? `<p class="usage-line">Also counts what players actually run: ${r.usageN.toLocaleString()} copies seen in ${modeWord() || 'recent'} matches.</p>` : '') +
+      usageSummary(r) +
       `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + bestPossibleHtml(r.total) + closest +
       `<p class="caveat">Scores reflect community picks. Some top rolls are built for a specific subclass or playstyle, so check the curator notes before you shard anything.</p>`;
     wireBestPossible();
