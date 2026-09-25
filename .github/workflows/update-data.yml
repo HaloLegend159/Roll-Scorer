@@ -2,12 +2,19 @@ name: Update roll data
 
 on:
   workflow_dispatch:        # run it by hand from the Actions tab
+    inputs:
+      force:
+        description: 'Publish even if the safety check fails'
+        type: boolean
+        default: false
   schedule:
-    - cron: '30 18 * * 2'   # Tuesdays after weekly reset (UTC)
-    - cron: '30 18 * * 5'   # Fridays, to catch wish list updates
+    - cron: '30 18 * * *'   # every day, an hour or so after Bungie's usual reset/patch time (UTC)
 
 permissions:
   contents: write
+
+concurrency:
+  group: update-data        # never run two at once
 
 jobs:
   build:
@@ -19,10 +26,20 @@ jobs:
         with:
           node-version: 24
 
+      # Samples perks from real loadouts in recent matches. Allowed to fail:
+      # if Bungie is slow or down, the roll data still updates without it.
+      - name: Sample weapon usage from recent matches
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          BUNGIE_API_KEY: ${{ secrets.BUNGIE_API_KEY }}
+        run: node scripts/collect-usage.mjs
+
       - name: Build data from Bungie manifest + wish list
         env:
           BUNGIE_API_KEY: ${{ secrets.BUNGIE_API_KEY }}
           NODE_OPTIONS: --max-old-space-size=6144
+          FORCE_PUBLISH_OK: ${{ inputs.force && '1' || '' }}
         run: node scripts/build-data.mjs
 
       - name: Commit changes
@@ -35,5 +52,6 @@ jobs:
             echo "No roll data changes"
           else
             git commit -m "Update roll data"
+            git pull --rebase
             git push
           fi
