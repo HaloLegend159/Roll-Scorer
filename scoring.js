@@ -94,6 +94,41 @@ window.RollScore = (() => {
     return { total: Math.round(100 * (0.55 * best + 0.45 * popularity)), matches };
   }
 
+  // Best score reachable by choosing one perk per column from `options`
+  // (arrays of perk indices; empty = unknown column). Tries every combination when there
+  // are few, otherwise improves one column at a time starting from `start`.
+  function best(ctx, mode, options, start) {
+    const cols = options.map(o => (o.length ? o : [null]));
+    const count = cols.reduce((n, o) => n * o.length, 1);
+    let top = null;
+    const consider = picks => {
+      const r = score(ctx, mode, picks);
+      if (r && (!top || r.total > top.total)) top = { ...r, picks: [...picks] };
+    };
+    if (count <= 256) {
+      let combos = [[]];
+      for (const o of cols) combos = combos.flatMap(c => o.map(x => [...c, x]));
+      combos.forEach(consider);
+    } else {
+      let cur = cols.map((o, ci) => (start && o.includes(start[ci]) ? start[ci] : o[0]));
+      consider(cur);
+      for (let pass = 0; pass < 4; pass++) {
+        let improved = false;
+        for (let ci = 0; ci < cols.length; ci++) {
+          for (const x of cols[ci]) {
+            if (x === cur[ci]) continue;
+            const t = [...cur];
+            t[ci] = x;
+            const r = score(ctx, mode, t);
+            if (r && r.total > (top ? top.total : -1)) { top = { ...r, picks: t }; cur = t; improved = true; }
+          }
+        }
+        if (!improved) break;
+      }
+    }
+    return top || { total: null, picks: cols.map(o => o[0]) };
+  }
+
   function grade(n) {
     if (n >= 90) return ['God roll', 'var(--gold)'];
     if (n >= 75) return ['Keeper', '#9ccf7a'];
@@ -102,5 +137,5 @@ window.RollScore = (() => {
     return ['Shard it', 'var(--bad)'];
   }
 
-  return { prepare, score, grade };
+  return { prepare, score, best, grade };
 })();
