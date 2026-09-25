@@ -156,6 +156,7 @@ main { flex: 1; padding: 2rem clamp(1rem, 4vw, 3rem); }
   margin: 0 0 1rem; padding: 0.6rem 0.75rem; font-size: 0.85rem;
   background: var(--perk-deep); border-left: 3px solid var(--perk);
 }
+.score .usage-line { margin: -0.5rem 0 1rem; font-size: 0.85rem; color: var(--muted); }
 .score .caveat {
   margin: 1rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--line);
   font-size: 0.8rem; color: var(--muted);

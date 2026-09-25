@@ -29,7 +29,8 @@
     }
     fetch('data/meta.json').then(r => r.json()).then(m => {
       const d = new Date(m.builtAt);
-      $('#meta').textContent = `Data updated ${d.toLocaleDateString()} · ${m.wishlistRolls.toLocaleString()} community rolls`;
+      $('#meta').textContent = `Data updated ${d.toLocaleDateString()} · ${m.wishlistRolls.toLocaleString()} community rolls` +
+        (m.usageLoadouts ? ` · ${m.usageLoadouts.toLocaleString()} weapons seen in real matches` : '');
     }).catch(() => {});
     readHash();
   }
@@ -154,6 +155,29 @@
       .map(([x, v]) => ({ name: perkByIndex(x).name, pct: Math.round((100 * v) / tot) }));
   }
 
+  // Real-world usage: how often each picked perk shows up on copies seen in matches,
+  // compared with the most-used perk in its column. null when there isn't enough data.
+  const MIN_USAGE = 30;
+  function usageRatio(w, colStart, usage, picks) {
+    if (!usage || usage.n < MIN_USAGE) return null;
+    let wSum = 0, wScore = 0;
+    w.columns.forEach((col, ci) => {
+      const p = picks[ci];
+      if (p === null || p === undefined) return;
+      let max = 0;
+      for (let j = 0; j < col.perks.length; j++) max = Math.max(max, usage.perks[colStart[ci] + j] || 0);
+      if (!max) return;
+      wSum += col.weight; wScore += col.weight * (usage.perks[p] || 0) / max;
+    });
+    return wSum ? wScore / wSum : null;
+  }
+  // Usage counts for 20% of the score, or 60% when the roll data is only an estimate
+  function blendUsage(w, total, ratio) {
+    if (ratio === null) return total;
+    const share = w.estimated ? 0.6 : 0.2;
+    return Math.round((1 - share) * total + share * 100 * ratio);
+  }
+
   function score(s, cs) {
     const cols = state.weapon.columns;
     const picked = new Set(state.picks.filter(p => p !== null));
@@ -190,8 +214,11 @@
       matches++;
       if (matchIdx < 0 || s.weights[i] > s.weights[matchIdx]) matchIdx = i;
     });
-    const total = Math.round(100 * (0.55 * best + 0.45 * popularity));
+    const usage = state.weapon.modes[state.mode].usage;
+    const ratio = usageRatio(state.weapon, state.colStart, usage, state.picks);
+    const total = blendUsage(state.weapon, Math.round(100 * (0.55 * best + 0.45 * popularity)), ratio);
     return {
+      usageN: ratio !== null ? Math.round(usage.n) : 0,
       total, perCol, best, matches,
       closest: bestIdx >= 0 ? s.rolls[bestIdx] : null,
       noteRoll: matchIdx >= 0 ? matchIdx : bestIdx,
@@ -347,7 +374,14 @@
     $('#perk-detail').innerHTML =
       `<h4>${esc(perk.name)}</h4><p>${esc(perk.desc || 'No description.')}</p>` +
       `<p class="stat">In ${pct}% of recommended ${modeWord()} rolls for this weapon.</p>` +
-      pairLine(i, s);
+      usageLine(i) + pairLine(i, s);
+  }
+
+  function usageLine(i) {
+    const u = state.weapon.modes[state.mode].usage;
+    if (!u || u.n < MIN_USAGE) return '';
+    const pct = Math.round((100 * (u.perks[i] || 0)) / u.n);
+    return `<p class="stat">On ${pct}% of the ${Math.round(u.n).toLocaleString()} copies seen in ${modeWord() || 'recent'} matches.</p>`;
   }
 
   function pairLine(i, s) {
@@ -412,6 +446,7 @@
       `<p class="num">${r.total}<small>/100</small></p>` +
       `<p class="grade">${label}</p>` +
       `<p class="why">${why}${missing ? ` ${missing} column${missing > 1 ? 's' : ''} still empty.` : ''}</p>` +
+      (r.usageN ? `<p class="usage-line">Also counts what players actually run: ${r.usageN.toLocaleString()} copies seen in ${modeWord() || 'recent'} matches.</p>` : '') +
       `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + bestPossibleHtml() + closest +
       `<p class="caveat">Scores reflect community picks. Some top rolls are built for a specific subclass or playstyle, so check the curator notes before you shard anything.</p>`;
     wireBestPossible();

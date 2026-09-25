@@ -65,6 +65,29 @@ window.RollScore = (() => {
     return { freq, max: s.colMax[ci], unpaired: others };
   }
 
+  // Real-world usage: how often each picked perk shows up on copies seen in matches,
+  // compared with the most-used perk in its column. null when there isn't enough data.
+  const MIN_USAGE = 30;
+  function usageRatio(w, colStart, usage, picks) {
+    if (!usage || usage.n < MIN_USAGE) return null;
+    let wSum = 0, wScore = 0;
+    w.columns.forEach((col, ci) => {
+      const p = picks[ci];
+      if (p === null || p === undefined) return;
+      let max = 0;
+      for (let j = 0; j < col.perks.length; j++) max = Math.max(max, usage.perks[colStart[ci] + j] || 0);
+      if (!max) return;
+      wSum += col.weight; wScore += col.weight * (usage.perks[p] || 0) / max;
+    });
+    return wSum ? wScore / wSum : null;
+  }
+  // Usage counts for 20% of the score, or 60% when the roll data is only an estimate
+  function blendUsage(w, total, ratio) {
+    if (ratio === null) return total;
+    const share = w.estimated ? 0.6 : 0.2;
+    return Math.round((1 - share) * total + share * 100 * ratio);
+  }
+
   // picks: one perk index per column, or null. Returns null when there's nothing to score.
   function score(ctx, mode, picks) {
     const s = ctx.stats(mode);
@@ -91,7 +114,9 @@ window.RollScore = (() => {
       if (m > best) best = m;
       if (roll.every(p => picked.has(p))) matches++;
     });
-    return { total: Math.round(100 * (0.55 * best + 0.45 * popularity)), matches };
+    const base = Math.round(100 * (0.55 * best + 0.45 * popularity));
+    const ratio = usageRatio(ctx.w, ctx.colStart, ctx.w.modes[mode].usage, picks);
+    return { total: blendUsage(ctx.w, base, ratio), matches, usage: ratio !== null };
   }
 
   // Best score reachable by choosing one perk per column from `options`

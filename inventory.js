@@ -340,7 +340,8 @@
     const tip = $('#tip');
     if (tip && !/YOUR-NAME/.test(tip.getAttribute('href'))) tip.hidden = false;
     fetch('data/meta.json').then(r => r.json()).then(m => {
-      $('#meta').textContent = `Data updated ${new Date(m.builtAt).toLocaleDateString()} · ${m.wishlistRolls.toLocaleString()} community rolls`;
+      $('#meta').textContent = `Data updated ${new Date(m.builtAt).toLocaleDateString()} · ${m.wishlistRolls.toLocaleString()} community rolls` +
+        (m.usageLoadouts ? ` · ${m.usageLoadouts.toLocaleString()} weapons seen in real matches` : '');
     }).catch(() => {});
 
     if (!configured) { show('setup'); return; }

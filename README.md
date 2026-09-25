@@ -16,19 +16,31 @@ the same data DIM uses for its thumbs-up icons. A GitHub Action rebuilds the dat
 
 Your site will be at `https://<username>.github.io/<repo>/`.
 
+## Where the data comes from
+
+- **Bungie manifest**: every weapon, which perks each can roll, descriptions and icons.
+- **DIM community wish list** (voltron.txt): recommended rolls and curator notes.
+- **Real matches** (`scripts/collect-usage.mjs`): each run samples a few hundred recent matches,
+  reads the equipped weapons of the players in them, and adds their perks to a running tally in
+  `data/usage/`. Old counts fade about 3% per run so it follows the current meta.
+- **Your inventory** (My inventory page): read live from Bungie when you sign in.
+
+The workflow runs daily. If a build looks broken (weapon or roll counts drop sharply) it refuses to
+publish and keeps the old data; GitHub emails you about the failed run. To publish anyway, run it by
+hand with **force** ticked.
+
 ## How the score works
 
 For the chosen activity (All / PvE / PvP):
 
-- **Closeness (55%)**: how many perks you share with the nearest recommended roll in the wish list.
-  Matching a recommended roll exactly gives full marks here.
-- **Perk strength (45%)**: for each column, how often your perk shows up in recommended rolls
-  compared with the most popular perk in that column. Trait columns count 3×, barrel and magazine 1×,
-  origin traits 0.5×.
+- **Closeness (55%)**: how many perks you share with the nearest recommended roll.
+- **Perk strength (45%)**: how often each of your perks appears in recommended rolls that go with
+  your other picks, compared with the best option in that column. Traits count 3×, barrel and
+  magazine 1×, origin traits 0.5×.
+- **Real usage**: once at least 30 copies of a gun have been seen in matches, how often players run
+  your perks is blended in at 20% (60% for guns whose roll data is only an estimate).
 
 Grades: 90+ God roll, 75+ Keeper, 55+ Solid, 35+ Situational, below that Shard it.
-
-Tweak the weights in `score()` in `app.js` and the column weights in `columnWeight()` in `scripts/build-data.mjs`.
 
 ## Running the data build locally
 
