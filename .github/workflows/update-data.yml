@@ -33,6 +33,8 @@ jobs:
         timeout-minutes: 25
         env:
           BUNGIE_API_KEY: ${{ secrets.BUNGIE_API_KEY }}
+          USAGE_MATCHES: 1200
+          USAGE_MAX_PLAYERS: 6000
         run: node scripts/collect-usage.mjs
 
       - name: Build data from Bungie manifest + wish list
