@@ -8,6 +8,7 @@
     mode: 'all',
     picks: [],      // one perk index per column, or null
     colOf: [],      // perk index -> column index
+    colStart: [],   // column index -> first perk index
   };
 
   // ---------- Loading ----------
@@ -36,7 +37,11 @@
     const w = await res.json();
     state.weapon = w;
     state.colOf = [];
-    w.columns.forEach((c, ci) => c.perks.forEach(() => state.colOf.push(ci)));
+    state.colStart = [];
+    w.columns.forEach((c, ci) => {
+      state.colStart.push(state.colOf.length);
+      c.perks.forEach(() => state.colOf.push(ci));
+    });
     state.picks = w.columns.map((_, ci) => {
       const p = picksFromUrl?.[ci];
       return Number.isInteger(p) && state.colOf[p] === ci ? p : null;
@@ -67,7 +72,81 @@
     return { rolls, weights, freq, colMax };
   }
 
-  function score(s) {
+  // Does this roll agree with the perks picked in every column except skipCol?
+  // A roll that says nothing about a column (e.g. traits only) agrees with any pick there.
+  function compatible(roll, skipCol) {
+    for (let ci = 0; ci < state.picks.length; ci++) {
+      const p = state.picks[ci];
+      if (p === null || ci === skipCol) continue;
+      let hasCol = false, hasPick = false;
+      for (const x of roll) {
+        if (state.colOf[x] === ci) { hasCol = true; if (x === p) hasPick = true; }
+      }
+      if (hasCol && !hasPick) return false;
+    }
+    return true;
+  }
+
+  // Perk popularity for one column, counting only rolls that go with the other picks.
+  function colStats(s, ci) {
+    const start = state.colStart[ci];
+    const end = start + state.weapon.columns[ci].perks.length;
+    const others = state.picks.some((p, c) => p !== null && c !== ci);
+    if (others) {
+      const freq = new Map();
+      let n = 0, max = 0;
+      s.rolls.forEach((roll, k) => {
+        if (!compatible(roll, ci)) return;
+        let counted = false;
+        for (const x of roll) {
+          if (x >= start && x < end) { freq.set(x, (freq.get(x) || 0) + s.weights[k]); counted = true; }
+        }
+        if (counted) n++;
+      });
+      if (n) {
+        freq.forEach(v => { if (v > max) max = v; });
+        return { freq, max, paired: true, unpaired: false };
+      }
+    }
+    const freq = new Map();
+    for (let x = start; x < end; x++) if (s.freq.get(x)) freq.set(x, s.freq.get(x));
+    // "unpaired": other perks are picked, but no recommended roll pairs anything here with them
+    return { freq, max: s.colMax[ci], paired: false, unpaired: others };
+  }
+
+  // Most common trait-column combinations
+  function topCombos(s) {
+    const traitCols = state.weapon.columns.map((c, ci) => (c.weight >= 3 ? ci : -1)).filter(ci => ci >= 0);
+    if (traitCols.length < 2) return [];
+    const map = new Map();
+    s.rolls.forEach((roll, k) => {
+      const byCol = traitCols.map(ci => roll.filter(x => state.colOf[x] === ci));
+      if (byCol.some(a => a.length !== 1)) return;
+      const key = byCol.map(a => a[0]).join('-');
+      map.set(key, (map.get(key) || 0) + s.weights[k]);
+    });
+    return [...map].sort((a, b) => b[1] - a[1]).slice(0, 6)
+      .map(([k, w]) => ({ perks: k.split('-').map(Number), w }));
+  }
+
+  // Which traits show up alongside perk i
+  function partners(i, s) {
+    const cols = state.weapon.columns;
+    const own = state.colOf[i];
+    const target = cols.map((c, ci) => (c.weight >= 3 && ci !== own ? ci : -1)).filter(ci => ci >= 0);
+    if (!target.length) return [];
+    const f = new Map();
+    let tot = 0;
+    s.rolls.forEach((roll, k) => {
+      if (!roll.includes(i)) return;
+      tot += s.weights[k];
+      roll.forEach(x => { if (target.includes(state.colOf[x])) f.set(x, (f.get(x) || 0) + s.weights[k]); });
+    });
+    return [...f].sort((a, b) => b[1] - a[1]).slice(0, 3)
+      .map(([x, v]) => ({ name: perkByIndex(x).name, pct: Math.round((100 * v) / tot) }));
+  }
+
+  function score(s, cs) {
     const cols = state.weapon.columns;
     const picked = new Set(state.picks.filter(p => p !== null));
     if (!s.rolls.length || !picked.size) return null;
@@ -77,7 +156,8 @@
     const perCol = cols.map((col, ci) => {
       const p = state.picks[ci];
       if (!s.colMax[ci] || p === null) return null;
-      const v = (s.freq.get(p) || 0) / s.colMax[ci];
+      let v = (cs[ci].freq.get(p) || 0) / cs[ci].max;
+      if (cs[ci].unpaired) v *= 0.5; // nobody recommends this perk with your other picks
       wSum += col.weight; wScore += col.weight * v;
       return v;
     });
@@ -112,14 +192,13 @@
 
   function perkByIndex(i) {
     const ci = state.colOf[i];
-    let start = 0;
-    for (let c = 0; c < ci; c++) start += state.weapon.columns[c].perks.length;
-    return state.weapon.columns[ci].perks[i - start];
+    return state.weapon.columns[ci].perks[i - state.colStart[ci]];
   }
 
   function render() {
     const w = state.weapon;
     const s = stats();
+    const cs = w.columns.map((_, ci) => colStats(s, ci));
 
     document.querySelectorAll('.modes button').forEach(b =>
       b.setAttribute('aria-checked', String(b.dataset.mode === state.mode)));
@@ -135,8 +214,8 @@
       el.innerHTML = `<h3>${esc(col.label)}</h3>`;
       col.perks.forEach(perk => {
         const i = idx++;
-        const f = s.freq.get(i) || 0;
-        const rel = s.colMax[ci] ? f / s.colMax[ci] : 0;
+        const f = cs[ci].freq.get(i) || 0;
+        const rel = cs[ci].max ? f / cs[ci].max : 0;
         const b = document.createElement('button');
         b.className = 'perk';
         b.title = perk.name;
@@ -157,7 +236,31 @@
       colsEl.appendChild(el);
     });
 
-    renderScore(s);
+    renderCombos(s);
+    renderScore(s, cs);
+  }
+
+  function renderCombos(s) {
+    let el = $('#combos');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'combos';
+      el.className = 'combos';
+      $('.actions').before(el);
+    }
+    const combos = topCombos(s);
+    if (!combos.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `<h3>Most recommended trait pairs</h3><div class="combo-list">${
+      combos.map((c, n) => {
+        const on = c.perks.every(p => state.picks.includes(p));
+        return `<button class="combo" data-n="${n}" aria-pressed="${on}">${
+          c.perks.map(p => esc(perkByIndex(p).name)).join(' + ')}<span>${c.w} roll${c.w === 1 ? "" : "s"}</span></button>`;
+      }).join('')}</div>`;
+    el.querySelectorAll('.combo').forEach(b => b.addEventListener('click', () => {
+      combos[Number(b.dataset.n)].perks.forEach(p => { state.picks[state.colOf[p]] = p; });
+      render();
+      writeHash();
+    }));
   }
 
   function showDetail(i, s) {
@@ -167,12 +270,20 @@
     const pct = total ? Math.round((100 * count) / total) : 0;
     $('#perk-detail').innerHTML =
       `<h4>${esc(perk.name)}</h4><p>${esc(perk.desc || 'No description.')}</p>` +
-      `<p class="stat">In ${pct}% of recommended ${modeWord()} rolls for this weapon.</p>`;
+      `<p class="stat">In ${pct}% of recommended ${modeWord()} rolls for this weapon.</p>` +
+      pairLine(i, s);
+  }
+
+  function pairLine(i, s) {
+    if (!(s.freq.get(i) > 0)) return '';
+    const list = partners(i, s);
+    if (!list.length) return '';
+    return `<p class="stat">Usually paired with ${list.map(x => `${esc(x.name)} (${x.pct}%)`).join(', ')}.</p>`;
   }
 
   function modeWord() { return state.mode === 'all' ? '' : state.mode === 'pve' ? 'PvE' : 'PvP'; }
 
-  function renderScore(s) {
+  function renderScore(s, cs) {
     const el = $('#score');
     const cols = state.weapon.columns;
     if (!s.rolls.length) {
@@ -180,7 +291,7 @@
       el.innerHTML = `<p class="grade">No data</p><p class="note">The community wish list has no ${modeWord()} rolls for this weapon yet${state.mode !== 'all' ? '. Try another activity filter.' : '.'}</p>`;
       return;
     }
-    const r = score(s);
+    const r = score(s, cs);
     if (!r) {
       el.style.removeProperty('--grade');
       el.innerHTML = `<p class="num">–</p><p class="note">Pick perks to see a score. Based on ${s.rolls.length.toLocaleString()} recommended ${modeWord()} rolls.</p>`;
@@ -198,8 +309,10 @@
       const v = r.perCol[ci];
       if (v === null || v === undefined) return '';
       const pct = Math.round(v * 100);
+      const warn = cs[ci].unpaired
+        ? '<small class="warn">Not paired with your other picks in any recommended roll</small>' : '';
       return `<li><span>${esc(col.label)}: ${esc(perkByIndex(state.picks[ci]).name)}</span><span>${pct}</span>
-        <div class="track"><div class="fill${pct === 100 ? ' max' : ''}" style="width:${pct}%"></div></div></li>`;
+        <div class="track"><div class="fill${pct === 100 ? ' max' : ''}" style="width:${pct}%"></div></div>${warn}</li>`;
     }).join('');
 
     const closest = r.closest && r.best < 1
