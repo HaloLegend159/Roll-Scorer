@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My inventory · Roll Scorer</title>
+  <meta name="description" content="Sign in with Bungie to score every weapon in your Destiny 2 vault and find what to keep or shard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand-row">
+      <h1 class="brand">Roll Scorer</h1>
+      <a id="tip" class="tip" href="https://ko-fi.com/halolegend159" target="_blank" rel="noopener" hidden>☕ Tip jar</a>
+    </div>
+    <p class="tagline">Every weapon you own, scored against the rolls the community chases.</p>
+    <nav class="tabs" aria-label="Pages">
+      <a href="./">Score a roll</a>
+      <a href="inventory.html" aria-current="page">My inventory</a>
+    </nav>
+  </header>
+
+  <main id="app">
+    <section id="signed-out" class="signin" hidden>
+      <h2>Score your whole vault</h2>
+      <p>Sign in with your Bungie account and every weapon on your characters and in your vault gets scored at once. Sort by score, find your best copy of each gun, and see what's safe to shard.</p>
+      <button id="signin" class="primary">Sign in with Bungie</button>
+      <p class="muted small">Read-only. The site can see your inventory but can't move, equip, or delete anything. Your login stays in this browser and is never sent anywhere except Bungie. Bungie logs you out of this site after about an hour.</p>
+    </section>
+
+    <section id="setup" class="signin" hidden>
+      <h2>Inventory isn't set up yet</h2>
+      <p>The site owner needs to add a Bungie API key and OAuth client ID to <code>config.js</code>.</p>
+    </section>
+
+    <section id="loading" class="signin" hidden>
+      <p id="load-msg">Loading…</p>
+    </section>
+
+    <section id="inv" hidden>
+      <div class="inv-bar">
+        <p id="who" class="muted"></p>
+        <div class="inv-actions">
+          <button id="refresh" class="ghost">Refresh</button>
+          <button id="signout" class="ghost">Sign out</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="modes" role="radiogroup" aria-label="Activity">
+          <button role="radio" data-mode="all" aria-checked="true">All</button>
+          <button role="radio" data-mode="pve" aria-checked="false">PvE</button>
+          <button role="radio" data-mode="pvp" aria-checked="false">PvP</button>
+        </div>
+        <label class="field"><span>Search</span><input id="f-name" type="search" placeholder="Weapon name"></label>
+        <label class="field"><span>Type</span><select id="f-type"><option value="">All types</option></select></label>
+        <label class="field"><span>Sort</span>
+          <select id="f-sort">
+            <option value="score-desc">Score, high to low</option>
+            <option value="score-asc">Score, low to high</option>
+            <option value="name">Name</option>
+            <option value="type">Type</option>
+          </select>
+        </label>
+        <label class="check"><input id="f-dupes" type="checkbox"> Duplicates only</label>
+        <label class="check"><input id="f-shard" type="checkbox"> Shard candidates</label>
+      </div>
+
+      <p id="summary" class="muted"></p>
+      <ul id="list" class="inv-list"></ul>
+      <p class="caveat-line muted">Scores reflect community picks. Some top rolls are built for a specific subclass or playstyle, so open a weapon and check the curator notes before you shard anything.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Roll data from the <a href="https://github.com/48klocs/dim-wish-list-sources">DIM community wish list</a>. Weapon data from the Bungie API. Not affiliated with Bungie.</p>
+    <p id="meta" class="muted"></p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="scoring.js"></script>
+  <script src="inventory.js"></script>
+</body>
+</html>

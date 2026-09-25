@@ -1,0 +1,106 @@
+// Scoring used by the inventory page. Same math as the "Score a roll" page (app.js),
+// written as plain functions so it can score many weapons at once.
+window.RollScore = (() => {
+  function prepare(w) {
+    const colOf = [], colStart = [], byName = [];
+    w.columns.forEach((c, ci) => {
+      colStart.push(colOf.length);
+      const m = new Map();
+      c.perks.forEach(p => { m.set(p.name, colOf.length); colOf.push(ci); });
+      byName.push(m);
+    });
+    const ctx = { w, colOf, colStart, byName, cache: {} };
+    ctx.stats = mode => (ctx.cache[mode] ||= stats(ctx, mode));
+    ctx.perk = i => w.columns[colOf[i]].perks[i - colStart[colOf[i]]];
+    return ctx;
+  }
+
+  function stats(ctx, mode) {
+    const { rolls, weights } = ctx.w.modes[mode];
+    const freq = new Map();
+    rolls.forEach((r, i) => r.forEach(p => freq.set(p, (freq.get(p) || 0) + weights[i])));
+    const colMax = ctx.w.columns.map((col, ci) => {
+      let m = 0;
+      for (let j = 0; j < col.perks.length; j++) m = Math.max(m, freq.get(ctx.colStart[ci] + j) || 0);
+      return m;
+    });
+    return { rolls, weights, freq, colMax };
+  }
+
+  function compatible(ctx, roll, picks, skipCol) {
+    for (let ci = 0; ci < picks.length; ci++) {
+      const p = picks[ci];
+      if (p === null || ci === skipCol) continue;
+      let hasCol = false, hasPick = false;
+      for (const x of roll) {
+        if (ctx.colOf[x] === ci) { hasCol = true; if (x === p) hasPick = true; }
+      }
+      if (hasCol && !hasPick) return false;
+    }
+    return true;
+  }
+
+  function colStats(ctx, s, ci, picks) {
+    const start = ctx.colStart[ci];
+    const end = start + ctx.w.columns[ci].perks.length;
+    const others = picks.some((p, c) => p !== null && c !== ci);
+    if (others) {
+      const freq = new Map();
+      let n = 0, max = 0;
+      s.rolls.forEach((roll, k) => {
+        if (!compatible(ctx, roll, picks, ci)) return;
+        let counted = false;
+        for (const x of roll) {
+          if (x >= start && x < end) { freq.set(x, (freq.get(x) || 0) + s.weights[k]); counted = true; }
+        }
+        if (counted) n++;
+      });
+      if (n) {
+        freq.forEach(v => { if (v > max) max = v; });
+        return { freq, max, unpaired: false };
+      }
+    }
+    const freq = new Map();
+    for (let x = start; x < end; x++) if (s.freq.get(x)) freq.set(x, s.freq.get(x));
+    return { freq, max: s.colMax[ci], unpaired: others };
+  }
+
+  // picks: one perk index per column, or null. Returns null when there's nothing to score.
+  function score(ctx, mode, picks) {
+    const s = ctx.stats(mode);
+    const picked = new Set(picks.filter(p => p !== null));
+    if (!s.rolls.length || !picked.size) return null;
+
+    let wSum = 0, wScore = 0;
+    ctx.w.columns.forEach((col, ci) => {
+      const p = picks[ci];
+      if (!s.colMax[ci] || p === null) return;
+      const cs = colStats(ctx, s, ci, picks);
+      let v = (cs.freq.get(p) || 0) / cs.max;
+      if (cs.unpaired) v *= 0.5;
+      wSum += col.weight; wScore += col.weight * v;
+    });
+    const popularity = wSum ? wScore / wSum : 0;
+
+    const pickedCols = new Set(picks.map((p, ci) => (p === null ? -1 : ci)));
+    let best = 0, matches = 0;
+    s.rolls.forEach(roll => {
+      const relevant = roll.filter(p => pickedCols.has(ctx.colOf[p]));
+      if (!relevant.length) return;
+      const m = relevant.filter(p => picked.has(p)).length / relevant.length;
+      if (m > best) best = m;
+      if (roll.every(p => picked.has(p))) matches++;
+    });
+    return { total: Math.round(100 * (0.55 * best + 0.45 * popularity)), matches };
+  }
+
+  function grade(n) {
+    if (n >= 90) return ['God roll', 'var(--gold)'];
+    if (n >= 75) return ['Keeper', '#9ccf7a'];
+    if (n >= 55) return ['Solid', 'var(--text)'];
+    if (n >= 35) return ['Situational', '#d8a25e'];
+    return ['Shard it', 'var(--bad)'];
+  }
+
+  return { prepare, score, grade };
+})();
