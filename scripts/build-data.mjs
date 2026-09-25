@@ -328,6 +328,17 @@ async function main() {
   // Real-world usage sampled from recent matches (scripts/collect-usage.mjs), if any
   const usage = await readFile(path.join(OUT, 'usage', 'usage.json'), 'utf8').then(JSON.parse).catch(() => null);
   let usageLoadouts = 0;
+  // Adept / Timelost / Harrowed copies roll the same perks as the base gun, so pool their usage
+  const family = id => id.replace(/-(adept|timelost|harrowed)(-x)*$/, '');
+  const usageByFamily = {};
+  for (const [wid, modes] of Object.entries(usage?.weapons || {})) {
+    const f = (usageByFamily[family(wid)] ||= {});
+    for (const [m, c] of Object.entries(modes)) {
+      const t = (f[m] ||= { n: 0, perks: {} });
+      t.n += c.n;
+      for (const [k, v] of Object.entries(c.perks)) t.perks[k] = (t.perks[k] || 0) + v;
+    }
+  }
 
   await rm(path.join(OUT, 'w'), { recursive: true, force: true });
   await mkdir(path.join(OUT, 'w'), { recursive: true });
@@ -355,7 +366,7 @@ async function main() {
     }
 
     // Usage counts per perk index, for PvE, PvP and both combined
-    const u = usage?.weapons?.[id];
+    const u = usageByFamily[family(id)];
     if (u) {
       const toArr = m => {
         const arr = g.idxToName.map(n => Math.round((m?.perks?.[n] || 0) * 10) / 10);
@@ -367,7 +378,7 @@ async function main() {
         modes.all.usage = all;
         if (pve.n >= 1) modes.pve.usage = pve;
         if (pvp.n >= 1) modes.pvp.usage = pvp;
-        usageLoadouts += all.n;
+        if (usage?.weapons?.[id]) usageLoadouts += (usage.weapons[id].pve?.n || 0) + (usage.weapons[id].pvp?.n || 0);
       }
     }
 
