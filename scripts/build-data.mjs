@@ -61,6 +61,13 @@ function classifyMode(notes) {
   return 'both';
 }
 
+// Strip the tag list and tidy whitespace; returns '' when there's nothing useful
+function cleanNote(notes) {
+  const tagIdx = notes.indexOf('|tags:');
+  const text = (tagIdx >= 0 ? notes.slice(0, tagIdx) : notes).replace(/\s+/g, ' ').trim();
+  return text.length >= 8 ? text : '';
+}
+
 export function parseWishlist(text) {
   const entries = [];
   let blockNotes = '';
@@ -78,7 +85,7 @@ export function parseWishlist(text) {
     if (!item || item < 0) continue; // negative = trash list or "any item" wildcard
     const perks = (params.get('perks') || '').split(',').map(Number).filter(Boolean);
     if (!perks.length) continue;
-    entries.push({ item, perks, mode: classifyMode(notes) });
+    entries.push({ item, perks, mode: classifyMode(notes), note: cleanNote(notes) });
   }
   return entries;
 }
@@ -209,12 +216,14 @@ async function main() {
     let j = 0;
     g.columns.forEach(col => col.perks.forEach(() => { if (col.weight >= 3) g.traitIdx.add(j); j++; }));
     g.rolls = { all: new Map(), pve: new Map(), pvp: new Map() };
+    g.notes = [];           // unique curator notes for this weapon
+    g.noteIdx = new Map();  // note text -> index
   }
 
   const wish = parseWishlist(wishText);
   console.log(`Parsed ${wish.length} wish list rolls`);
   let matched = 0;
-  for (const { item, perks, mode } of wish) {
+  for (const { item, perks, mode, note } of wish) {
     const g = hashToGroup.get(item);
     if (!g) continue;
     const idx = [...new Set(perks
@@ -223,8 +232,18 @@ async function main() {
     if (!idx.length) continue;
     if (g.traitIdx.size && !idx.some(i => g.traitIdx.has(i))) continue;
     const key = idx.join(',');
+    let ni = -1;
+    if (note) {
+      if (!g.noteIdx.has(note)) { g.noteIdx.set(note, g.notes.length); g.notes.push(note); }
+      ni = g.noteIdx.get(note);
+    }
     const targets = mode === 'both' ? ['all', 'pve', 'pvp'] : ['all', mode];
-    for (const t of targets) g.rolls[t].set(key, (g.rolls[t].get(key) || 0) + 1);
+    for (const t of targets) {
+      const r = g.rolls[t].get(key) || { w: 0, notes: new Set() };
+      r.w++;
+      if (ni >= 0 && r.notes.size < 3) r.notes.add(ni);
+      g.rolls[t].set(key, r);
+    }
     matched++;
   }
   console.log(`Matched ${matched} rolls to weapons`);
@@ -243,11 +262,12 @@ async function main() {
     const modes = {};
     for (const [m, map] of Object.entries(g.rolls)) {
       const list = [...map.entries()]
-        .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+        .sort((a, b) => b[1].w - a[1].w || (a[0] < b[0] ? -1 : 1))
         .slice(0, MAX_ROLLS_PER_MODE);
       modes[m] = {
         rolls: list.map(([k]) => k.split(',').map(Number)),
-        weights: list.map(([, w]) => w),
+        weights: list.map(([, r]) => r.w),
+        notes: list.map(([, r]) => [...r.notes]), // indices into the weapon's notes list
       };
     }
 
@@ -263,6 +283,7 @@ async function main() {
         weight: c.weight,
         perks: c.perks.map(p => ({ name: p.name, icon: p.icon, desc: p.desc })),
       })),
+      notes: g.notes,
       modes,
     };
     await writeFile(path.join(OUT, 'w', `${id}.json`), JSON.stringify(out));
