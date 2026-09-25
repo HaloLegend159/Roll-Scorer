@@ -95,6 +95,9 @@ export function parseWishlist(text) {
 
 // ---------- Weapons ----------
 
+// Every weapon perk hash we see -> its name, so the inventory page can read rolled perks
+const perkNames = {};
+
 function perkColumns(item, items, plugSets) {
   const cat = item.sockets?.socketCategories?.find(c => c.socketCategoryHash === WEAPON_PERKS_CATEGORY);
   if (!cat) return null;
@@ -109,9 +112,12 @@ function perkColumns(item, items, plugSets) {
     let hashes = [];
     const setHash = entry.randomizedPlugSetHash || entry.reusablePlugSetHash;
     if (setHash && plugSets[setHash]) {
-      hashes = plugSets[setHash].reusablePlugItems
-        .filter(p => p.currentlyCanRoll !== false)
-        .map(p => p.plugItemHash);
+      const all = plugSets[setHash].reusablePlugItems;
+      for (const p of all) {
+        const n = items[p.plugItemHash]?.displayProperties?.name;
+        if (n) perkNames[p.plugItemHash] = n;
+      }
+      hashes = all.filter(p => p.currentlyCanRoll !== false).map(p => p.plugItemHash);
     } else if (entry.reusablePlugItems?.length) {
       hashes = entry.reusablePlugItems.map(p => p.plugItemHash);
     } else if (entry.singleInitialItemHash) {
@@ -121,6 +127,7 @@ function perkColumns(item, items, plugSets) {
     const byName = new Map();
     for (const h of hashes) {
       const plug = items[h];
+      if (plug?.displayProperties?.name) perkNames[h] = plug.displayProperties.name;
       const name = plug?.displayProperties?.name;
       if (!name || /^empty\b/i.test(name)) continue;
       if (SKIP_PLUG_CATEGORY.test(plug.plug?.plugCategoryIdentifier || '')) continue;
@@ -139,7 +146,7 @@ function perkColumns(item, items, plugSets) {
     }
     if (!byName.size) continue;
     const perks = [...byName.values()];
-    columns.push({ label: perks[0].type || 'Perk', perks });
+    columns.push({ label: perks[0].type || 'Perk', perks, socket: idx });
   }
   return hasRandomRolls ? columns : null;
 }
@@ -203,12 +210,14 @@ async function main() {
         screenshot: item.screenshot || '',
         frame: frameName(item, items),
         columns: cols,
+        sockets: {},
       };
       groups.set(name, g);
     } else {
       g.columns = mergeColumns(g.columns, cols);
     }
     g.hashes.push(Number(hash));
+    g.sockets[hash] = cols.map(c => c.socket); // which socket holds each perk column
     hashToGroup.set(Number(hash), g);
   }
   console.log(`Found ${groups.size} random-roll weapons`);
@@ -309,12 +318,14 @@ async function main() {
   await mkdir(path.join(OUT, 'w'), { recursive: true });
 
   const index = [];
+  const lookup = { items: {}, perks: perkNames };
   const usedIds = new Set();
   const sorted = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
   for (const g of sorted) {
     let id = slug(g.name);
     while (usedIds.has(id)) id += '-x';
     usedIds.add(id);
+    for (const h of g.hashes) lookup.items[h] = [id, g.sockets[h]];
 
     const modes = {};
     for (const [m, map] of Object.entries(g.rolls)) {
@@ -353,6 +364,7 @@ async function main() {
   }
 
   await writeFile(path.join(OUT, 'index.json'), JSON.stringify(index));
+  await writeFile(path.join(OUT, 'lookup.json'), JSON.stringify(lookup));
   await writeFile(path.join(OUT, 'meta.json'), JSON.stringify({
     manifestVersion: version,
     builtAt: new Date().toISOString(),
