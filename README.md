@@ -38,7 +38,9 @@ For the chosen activity (All / PvE / PvP):
   your other picks, compared with the best option in that column. Traits count 3×, barrel and
   magazine 1×, origin traits 0.5×.
 - **Real usage**: once at least 30 copies of a gun have been seen in matches, how often players run
-  your perks is blended in at 20% (60% for guns whose roll data is only an estimate).
+  your perks is blended in at 20%, but only when that raises the score. A rare god roll that few
+  people own is still a god roll. For guns whose roll data is only an estimate, usage counts for
+  60% either way.
 
 Grades: 90+ God roll, 75+ Keeper, 55+ Solid, 35+ Situational, below that Shard it.
 
