@@ -14,6 +14,9 @@ const OUT = path.resolve(process.env.OUT_DIR || 'data');
 const BUNGIE = 'https://www.bungie.net';
 
 const WEAPON_PERKS_CATEGORY = 4241085061; // "Weapon Perks" socket category
+const INTRINSIC_CATEGORY = 3956125808;    // holds the weapon's frame (e.g. "Support Frame")
+const MIN_ESTIMATE_ROLLS = 10;            // fewest borrowed rolls needed for an estimate
+const MAX_ROLLS_PER_SOURCE = 200;         // so one popular gun can't drown out the rest
 const ITEM_TYPE_WEAPON = 3;
 const DUMMY_CATEGORY = 3109687656;
 const MAX_ROLLS_PER_MODE = 3000;          // keeps per-weapon files small
@@ -141,6 +144,12 @@ function perkColumns(item, items, plugSets) {
   return hasRandomRolls ? columns : null;
 }
 
+function frameName(item, items) {
+  const cat = item.sockets?.socketCategories?.find(c => c.socketCategoryHash === INTRINSIC_CATEGORY);
+  const entry = cat && item.sockets.socketEntries[cat.socketIndexes[0]];
+  return items[entry?.singleInitialItemHash]?.displayProperties?.name || '';
+}
+
 function columnWeight(label) {
   if (/origin/i.test(label)) return 0.5;
   if (/trait/i.test(label)) return 3;
@@ -192,6 +201,7 @@ async function main() {
         tier: item.inventory?.tierTypeName || '',
         icon: item.displayProperties.icon || '',
         screenshot: item.screenshot || '',
+        frame: frameName(item, items),
         columns: cols,
       };
       groups.set(name, g);
@@ -206,10 +216,11 @@ async function main() {
   // Flatten perk indices so rolls can reference them compactly
   for (const g of groups.values()) {
     g.nameToIdx = new Map();
+    g.idxToName = [];
     let i = 0;
     g.columns.forEach(col => {
       col.weight = columnWeight(col.label);
-      for (const p of col.perks) g.nameToIdx.set(p.name, i++);
+      for (const p of col.perks) { g.nameToIdx.set(p.name, i++); g.idxToName.push(p.name); }
     });
     // Perks in trait columns; a recommended roll with no trait perk says little about the gun
     g.traitIdx = new Set();
@@ -248,6 +259,52 @@ async function main() {
   }
   console.log(`Matched ${matched} rolls to weapons`);
 
+  // Weapons nobody has posted rolls for: borrow rolls from similar weapons.
+  // First try the same type and frame (e.g. Support Frame Auto Rifles), then just the same type.
+  const pools = new Map();
+  for (const g of groups.values()) {
+    if (!g.rolls.all.size) continue;
+    for (const key of [`${g.type}|${g.frame}`, `${g.type}|*`]) {
+      if (!pools.has(key)) pools.set(key, []);
+      pools.get(key).push(g);
+    }
+  }
+  let estimated = 0;
+  for (const g of groups.values()) {
+    if (g.rolls.all.size) continue;
+    const tries = [[`${g.type}|${g.frame}`, g.frame ? `${g.frame} ${g.type}s` : `${g.type}s`], [`${g.type}|*`, `${g.type}s`]];
+    for (const [key, label] of tries) {
+      const sources = pools.get(key) || [];
+      if (!sources.length) continue;
+      const est = { all: new Map(), pve: new Map(), pvp: new Map() };
+      let used = 0;
+      for (const src of sources) {
+        for (const m of Object.keys(est)) {
+          const top = [...src.rolls[m].entries()].sort((a, b) => b[1].w - a[1].w).slice(0, MAX_ROLLS_PER_SOURCE);
+          for (const [k, r] of top) {
+            const idx = [...new Set(k.split(',')
+              .map(x => g.nameToIdx.get(src.idxToName[Number(x)]))
+              .filter(v => v !== undefined))].sort((a, b) => a - b);
+            if (!idx.length) continue;
+            if (g.traitIdx.size && !idx.some(x => g.traitIdx.has(x))) continue;
+            const key2 = idx.join(',');
+            const cur = est[m].get(key2) || { w: 0, notes: new Set() };
+            cur.w += r.w;
+            est[m].set(key2, cur);
+            if (m === 'all') used += r.w;
+          }
+        }
+      }
+      if (used >= MIN_ESTIMATE_ROLLS) {
+        g.rolls = est;
+        g.estimated = { basis: label, weapons: sources.length, rolls: used };
+        estimated++;
+        break;
+      }
+    }
+  }
+  console.log(`Estimated rolls for ${estimated} weapons with no wish list data`);
+
   await rm(path.join(OUT, 'w'), { recursive: true, force: true });
   await mkdir(path.join(OUT, 'w'), { recursive: true });
 
@@ -284,10 +341,15 @@ async function main() {
         perks: c.perks.map(p => ({ name: p.name, icon: p.icon, desc: p.desc })),
       })),
       notes: g.notes,
+      estimated: g.estimated || null,
       modes,
     };
     await writeFile(path.join(OUT, 'w', `${id}.json`), JSON.stringify(out));
-    index.push({ id, name: g.name, type: g.type, tier: g.tier, icon: g.icon, n: modes.all.rolls.length });
+    index.push({
+      id, name: g.name, type: g.type, tier: g.tier, icon: g.icon,
+      n: g.estimated ? 0 : modes.all.rolls.length,
+      ...(g.estimated ? { est: 1 } : {}),
+    });
   }
 
   await writeFile(path.join(OUT, 'index.json'), JSON.stringify(index));
