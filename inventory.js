@@ -25,14 +25,15 @@
 
   // ---------- Sign in (Bungie OAuth, public client) ----------
 
+  let memToken = null; // used if the browser blocks storage
+  let justSignedIn = false;
+
   function getToken() {
-    try {
-      const t = JSON.parse(localStorage.getItem(TOKEN_KEY));
-      if (t && t.expiresAt > Date.now() + 60_000) return t;
-    } catch {}
-    return null;
+    let t = memToken;
+    try { t = JSON.parse(localStorage.getItem(TOKEN_KEY)) || memToken; } catch {}
+    return t && t.expiresAt > Date.now() + 60_000 ? t : null;
   }
-  function clearToken() { try { localStorage.removeItem(TOKEN_KEY); } catch {} }
+  function clearToken() { memToken = null; try { localStorage.removeItem(TOKEN_KEY); } catch {} }
 
   function signIn() {
     const st = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -49,7 +50,10 @@
     history.replaceState(null, '', location.pathname);
     let expected = null;
     try { expected = sessionStorage.getItem(STATE_KEY); sessionStorage.removeItem(STATE_KEY); } catch {}
-    if (!expected || params.get('state') !== expected) throw new Error('Sign-in check failed. Please try again.');
+    if (params.get('error')) throw new Error(`Bungie sign-in was cancelled or failed (${params.get('error')}).`);
+    if (!expected || params.get('state') !== expected) {
+      throw new Error('Sign-in check failed. Make sure you start sign-in from this page, in the same browser tab.');
+    }
 
     loading('Finishing sign-in…');
     const res = await fetch(`${BUNGIE}/Platform/App/OAuth/token/`, {
@@ -61,12 +65,12 @@
     if (!res.ok || !j.access_token) {
       throw new Error(`Bungie didn't accept the sign-in (${j.error_description || j.error || res.status}).`);
     }
-    try {
-      localStorage.setItem(TOKEN_KEY, JSON.stringify({
-        accessToken: j.access_token,
-        expiresAt: Date.now() + j.expires_in * 1000,
-      }));
-    } catch {}
+    memToken = {
+      accessToken: j.access_token,
+      expiresAt: Date.now() + (Number(j.expires_in) || 3600) * 1000,
+    };
+    try { localStorage.setItem(TOKEN_KEY, JSON.stringify(memToken)); } catch {}
+    justSignedIn = true;
   }
 
   class AuthError extends Error {}
@@ -80,7 +84,8 @@
     const j = await res.json().catch(() => null);
     if (res.status === 401 || j?.ErrorCode === 99 || j?.ErrorCode === 2111) {
       clearToken();
-      throw new AuthError('Your Bungie login expired.');
+      const why = j ? `${j.ErrorStatus || ''} ${j.Message || ''}`.trim() : `HTTP ${res.status}`;
+      throw new AuthError(`Bungie rejected the login: ${why}`);
     }
     if (!j || j.ErrorCode !== 1) throw new Error(j?.Message || `Bungie API error ${res.status}`);
     return j.Response;
@@ -332,6 +337,16 @@
   }
 
   function showError(err) {
+    // Right after signing in, a rejected login is a setup problem, so show the details
+    if (err instanceof AuthError && justSignedIn) {
+      justSignedIn = false;
+      show('loading');
+      $('#load-msg').innerHTML = `${esc(err.message)}<br><br>This usually means the API key in <code>config.js</code> ` +
+        `comes from a different Bungie app than the client ID. Both must come from the same app. ` +
+        `<button class="ghost" id="retry">Back to sign in</button>`;
+      $('#retry').addEventListener('click', () => show('signed-out'));
+      return;
+    }
     if (err instanceof AuthError) {
       show('signed-out');
       if (err.message !== 'Signed out') $('#signed-out h2').textContent = 'Your login expired. Sign in again';
