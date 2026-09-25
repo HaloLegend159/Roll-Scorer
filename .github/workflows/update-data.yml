@@ -13,11 +13,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Build data from Bungie manifest + wish list
         env:
@@ -30,7 +30,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
-          if git diff --cached --quiet -- data/index.json data/w; then
+          # meta.json changes every run, so ignore it when deciding whether to commit
+          if git diff --cached --quiet -- data ':!data/meta.json'; then
             echo "No roll data changes"
           else
             git commit -m "Update roll data"
