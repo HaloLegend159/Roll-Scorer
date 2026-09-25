@@ -317,11 +317,12 @@
   }
 
   // Best score this copy can reach by switching between the perks it has
-  function bestPossibleHtml() {
+  function bestPossibleHtml(currentTotal) {
     if (!state.avail || !state.rs) return '';
     const b = RollScore.best(state.rs, state.mode, state.avail, state.picks);
     if (b.total === null) return '';
-    const same = b.picks.every((p, ci) => p === null || state.picks[ci] === p);
+    const same = (currentTotal !== undefined && b.total <= currentTotal) ||
+      b.picks.every((p, ci) => p === null || state.picks[ci] === p);
     const names = b.picks.map((p, ci) => (p !== null && state.avail[ci].length > 1 ? perkByIndex(p).name : null)).filter(Boolean);
     return `<div class="best-possible">
         <p><span>Best possible with your gun's perks</span><b>${b.total}</b></p>
@@ -447,7 +448,7 @@
       `<p class="grade">${label}</p>` +
       `<p class="why">${why}${missing ? ` ${missing} column${missing > 1 ? 's' : ''} still empty.` : ''}</p>` +
       (r.usageN ? `<p class="usage-line">Also counts what players actually run: ${r.usageN.toLocaleString()} copies seen in ${modeWord() || 'recent'} matches.</p>` : '') +
-      `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + bestPossibleHtml() + closest +
+      `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + bestPossibleHtml(r.total) + closest +
       `<p class="caveat">Scores reflect community picks. Some top rolls are built for a specific subclass or playstyle, so check the curator notes before you shard anything.</p>`;
     wireBestPossible();
   }
