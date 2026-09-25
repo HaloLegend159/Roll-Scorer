@@ -81,11 +81,13 @@ window.RollScore = (() => {
     });
     return wSum ? wScore / wSum : null;
   }
-  // Usage counts for 20% of the score, or 60% when the roll data is only an estimate
+  // Usage can only raise a score for guns with curator data: a rare god roll that few players
+  // own is still a god roll. For guns whose roll data is only an estimate, usage counts for 60%
+  // either way, since real loadouts beat a guess.
   function blendUsage(w, total, ratio) {
     if (ratio === null) return total;
-    const share = w.estimated ? 0.6 : 0.2;
-    return Math.round((1 - share) * total + share * 100 * ratio);
+    if (w.estimated) return Math.round(0.4 * total + 0.6 * 100 * ratio);
+    return Math.max(total, Math.round(0.8 * total + 0.2 * 100 * ratio));
   }
 
   // picks: one perk index per column, or null. Returns null when there's nothing to score.
