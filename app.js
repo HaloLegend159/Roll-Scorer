@@ -9,6 +9,9 @@
     picks: [],      // one perk index per column, or null
     colOf: [],      // perk index -> column index
     colStart: [],   // column index -> first perk index
+    avail: null,    // perks this copy of the gun has (from the inventory page), per column
+    onlyAvail: true,
+    rs: null,       // RollScore context for "best possible"
   };
 
   // ---------- Loading ----------
@@ -31,7 +34,7 @@
     readHash();
   }
 
-  async function loadWeapon(id, picksFromUrl) {
+  async function loadWeapon(id, picksFromUrl, availFromUrl) {
     const res = await fetch(`data/w/${encodeURIComponent(id)}.json`);
     if (!res.ok) { $('#status').textContent = `Couldn't load that weapon (${res.status}).`; return; }
     const w = await res.json();
@@ -46,6 +49,11 @@
       const p = picksFromUrl?.[ci];
       return Number.isInteger(p) && state.colOf[p] === ci ? p : null;
     });
+    state.avail = availFromUrl
+      ? w.columns.map((_, ci) => (availFromUrl[ci] || []).filter(p => Number.isInteger(p) && state.colOf[p] === ci))
+      : null;
+    if (state.avail && !state.avail.some(a => a.length)) state.avail = null;
+    state.rs = window.RollScore ? RollScore.prepare(w) : null;
     $('#empty').hidden = true;
     $('#weapon').hidden = false;
     $('#w-icon').src = w.icon ? BUNGIE + w.icon : '';
@@ -213,10 +221,14 @@
     document.querySelectorAll('.modes button').forEach(b =>
       b.setAttribute('aria-checked', String(b.dataset.mode === state.mode)));
 
+    renderAvailToggle();
+    const filterAvail = state.avail && state.onlyAvail;
+
     const colsEl = $('#columns');
     colsEl.innerHTML = '';
     let idx = 0;
     w.columns.forEach((col, ci) => {
+      const keep = filterAvail && state.avail[ci].length ? new Set(state.avail[ci]) : null;
       const el = document.createElement('div');
       el.className = 'col' + (col.weight >= 3 ? ' key' : '') + (state.picks[ci] !== null ? ' has-pick' : '');
       el.setAttribute('role', 'group');
@@ -224,6 +236,7 @@
       el.innerHTML = `<h3>${esc(col.label)}</h3>`;
       col.perks.forEach(perk => {
         const i = idx++;
+        if (keep && !keep.has(i)) return;
         const f = cs[ci].freq.get(i) || 0;
         const rel = cs[ci].max ? f / cs[ci].max : 0;
         const b = document.createElement('button');
@@ -248,6 +261,59 @@
 
     renderCombos(s);
     renderScore(s, cs);
+  }
+
+  // "Your gun's perks / All perks" switch, shown when the weapon came from the inventory page
+  function renderAvailToggle() {
+    let el = $('#avail-bar');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'avail-bar';
+      el.className = 'avail-bar';
+      $('#columns').before(el);
+    }
+    if (!state.avail) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="modes" role="radiogroup" aria-label="Perks shown">
+        <button role="radio" data-avail="1" aria-checked="${state.onlyAvail}">Your gun's perks</button>
+        <button role="radio" data-avail="0" aria-checked="${!state.onlyAvail}">All possible perks</button>
+      </div>`;
+    el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      state.onlyAvail = b.dataset.avail === '1';
+      if (state.onlyAvail) {
+        // Drop picks this copy can't have
+        state.picks = state.picks.map((p, ci) =>
+          p === null || !state.avail[ci].length || state.avail[ci].includes(p) ? p : null);
+      }
+      render();
+      writeHash();
+    }));
+  }
+
+  // Best score this copy can reach by switching between the perks it has
+  function bestPossibleHtml() {
+    if (!state.avail || !state.rs) return '';
+    const b = RollScore.best(state.rs, state.mode, state.avail, state.picks);
+    if (b.total === null) return '';
+    const same = b.picks.every((p, ci) => p === null || state.picks[ci] === p);
+    const names = b.picks.map((p, ci) => (p !== null && state.avail[ci].length > 1 ? perkByIndex(p).name : null)).filter(Boolean);
+    return `<div class="best-possible">
+        <p><span>Best possible with your gun's perks</span><b>${b.total}</b></p>
+        ${same
+          ? '<p class="small muted">You\'re already using the best combination this gun has.</p>'
+          : `<p class="small muted">${names.length ? `Uses ${names.map(esc).join(' + ')}.` : ''}</p>
+             <button class="ghost" id="use-best">Use these perks</button>`}
+      </div>`;
+  }
+
+  function wireBestPossible() {
+    const btn = $('#use-best');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const b = RollScore.best(state.rs, state.mode, state.avail, state.picks);
+      state.picks = b.picks.map(p => (p === undefined ? null : p));
+      render();
+      writeHash();
+    });
   }
 
   function renderCombos(s) {
@@ -306,6 +372,11 @@
     if (!r) {
       el.style.removeProperty('--grade');
       const e = state.weapon.estimated;
+      if (state.avail) {
+        el.innerHTML = bestPossibleHtml();
+        wireBestPossible();
+        return;
+      }
       el.innerHTML = `<p class="num">–</p><p class="note">Pick perks to see a score. Based on ${
         e ? `rolls recommended for ${e.weapons} similar ${esc(basisText(e))}` : `${s.rolls.length.toLocaleString()} recommended ${modeWord()} rolls`}.</p>`;
       return;
@@ -341,8 +412,9 @@
       `<p class="num">${r.total}<small>/100</small></p>` +
       `<p class="grade">${label}</p>` +
       `<p class="why">${why}${missing ? ` ${missing} column${missing > 1 ? 's' : ''} still empty.` : ''}</p>` +
-      `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + closest +
+      `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + bestPossibleHtml() + closest +
       `<p class="caveat">Scores reflect community picks. Some top rolls are built for a specific subclass or playstyle, so check the curator notes before you shard anything.</p>`;
+    wireBestPossible();
   }
 
   // Curator notes for the matching (or closest) recommended roll
@@ -385,15 +457,17 @@
   function writeHash() {
     if (!state.weapon) return;
     const p = state.picks.map(x => (x === null ? '_' : x)).join('-');
-    history.replaceState(null, '', `#/${state.weapon.id}/${state.mode}/${p}`);
+    const a = state.avail ? '/' + state.avail.map(o => (o.length ? o.join('.') : '_')).join('-') : '';
+    history.replaceState(null, '', `#/${state.weapon.id}/${state.mode}/${p}${a}`);
   }
 
   function readHash() {
-    const [, id, mode, p] = location.hash.split('/');
+    const [, id, mode, p, a] = location.hash.split('/');
     if (!id) return;
     if (['all', 'pve', 'pvp'].includes(mode)) state.mode = mode;
     const picks = (p || '').split('-').map(x => (x === '_' || x === '' ? null : Number(x)));
-    loadWeapon(decodeURIComponent(id), picks);
+    const avail = a ? a.split('-').map(x => (x === '_' || x === '' ? [] : x.split('.').map(Number))) : null;
+    loadWeapon(decodeURIComponent(id), picks, avail);
   }
 
   // ---------- Search ----------
