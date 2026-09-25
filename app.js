@@ -305,7 +305,9 @@
     renderNotes(s, r);
     if (!r) {
       el.style.removeProperty('--grade');
-      el.innerHTML = `<p class="num">–</p><p class="note">Pick perks to see a score. Based on ${s.rolls.length.toLocaleString()} recommended ${modeWord()} rolls.</p>`;
+      const e = state.weapon.estimated;
+      el.innerHTML = `<p class="num">–</p><p class="note">Pick perks to see a score. Based on ${
+        e ? `rolls recommended for ${e.weapons} similar ${esc(basisText(e))}` : `${s.rolls.length.toLocaleString()} recommended ${modeWord()} rolls`}.</p>`;
       return;
     }
     const [label, color] = grade(r.total);
@@ -331,7 +333,11 @@
           r.closest.map(p => `<li class="${state.picks.includes(p) ? 'hit' : ''}">${esc(perkByIndex(p).name)}</li>`).join('')
         }</ul></div>` : '';
 
-    el.innerHTML =
+    const e = state.weapon.estimated;
+    const estNote = e
+      ? `<p class="est">Estimated. Nobody has posted recommended rolls for this gun yet, so this score uses rolls recommended for ${e.weapons} other ${esc(basisText(e))}.</p>`
+      : '';
+    el.innerHTML = estNote +
       `<p class="num">${r.total}<small>/100</small></p>` +
       `<p class="grade">${label}</p>` +
       `<p class="why">${why}${missing ? ` ${missing} column${missing > 1 ? 's' : ''} still empty.` : ''}</p>` +
@@ -367,6 +373,8 @@
       b.textContent = open ? 'Read full note' : 'Show less';
     }));
   }
+
+  function basisText(e) { return e.weapons === 1 ? e.basis.replace(/s$/, '') : e.basis; }
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -411,7 +419,7 @@
       `<li role="option" id="opt-${i}" aria-selected="${i === active}" data-i="${i}">
         <img src="${w.icon ? BUNGIE + w.icon : ''}" alt="" loading="lazy">
         <span><span class="r-name">${esc(w.name)}</span><br><span class="r-type">${esc(w.type)}</span></span>
-        <span class="r-count">${w.n ? `${w.n} rolls` : 'no data'}</span>
+        <span class="r-count">${w.n ? `${w.n} rolls` : w.est ? 'estimated' : 'no data'}</span>
       </li>`).join('') : '<li aria-disabled="true">No weapons match that name.</li>';
     list.hidden = false;
     box.setAttribute('aria-expanded', 'true');
@@ -467,6 +475,9 @@
     }
     setTimeout(() => { btn.textContent = 'Copy link to this roll'; }, 2000);
   });
+
+  const tip = $('#tip');
+  if (tip && !/YOUR-NAME/.test(tip.getAttribute('href'))) tip.hidden = false;
 
   init();
 })();
