@@ -175,9 +175,19 @@
       }
     });
 
-    const matches = s.rolls.filter(roll => roll.every(p => picked.has(p))).length;
+    // Exact matches; remember the most-recommended one for its notes
+    let matches = 0, matchIdx = -1;
+    s.rolls.forEach((roll, i) => {
+      if (!roll.every(p => picked.has(p))) return;
+      matches++;
+      if (matchIdx < 0 || s.weights[i] > s.weights[matchIdx]) matchIdx = i;
+    });
     const total = Math.round(100 * (0.55 * best + 0.45 * popularity));
-    return { total, perCol, best, matches, closest: bestIdx >= 0 ? s.rolls[bestIdx] : null };
+    return {
+      total, perCol, best, matches,
+      closest: bestIdx >= 0 ? s.rolls[bestIdx] : null,
+      noteRoll: matchIdx >= 0 ? matchIdx : bestIdx,
+    };
   }
 
   function grade(n) {
@@ -292,6 +302,7 @@
       return;
     }
     const r = score(s, cs);
+    renderNotes(s, r);
     if (!r) {
       el.style.removeProperty('--grade');
       el.innerHTML = `<p class="num">–</p><p class="note">Pick perks to see a score. Based on ${s.rolls.length.toLocaleString()} recommended ${modeWord()} rolls.</p>`;
@@ -324,7 +335,37 @@
       `<p class="num">${r.total}<small>/100</small></p>` +
       `<p class="grade">${label}</p>` +
       `<p class="why">${why}${missing ? ` ${missing} column${missing > 1 ? 's' : ''} still empty.` : ''}</p>` +
-      `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + closest;
+      `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + closest +
+      `<p class="caveat">Scores reflect community picks. Some top rolls are built for a specific subclass or playstyle, so check the curator notes before you shard anything.</p>`;
+  }
+
+  // Curator notes for the matching (or closest) recommended roll
+  function renderNotes(s, r) {
+    let el = $('#notes');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'notes';
+      el.className = 'notes';
+      $('.actions').before(el);
+    }
+    const all = state.weapon.notes || [];
+    const m = state.weapon.modes[state.mode];
+    const idx = r && r.noteRoll >= 0 && m.notes ? m.notes[r.noteRoll] : [];
+    if (!idx || !idx.length) { el.innerHTML = ''; return; }
+    const heading = r.matches ? 'Why this roll is recommended' : 'Notes on the closest recommended roll';
+    el.innerHTML = `<h3>${heading}</h3>` + idx.slice(0, 2).map(n => {
+      const text = all[n] || '';
+      if (text.length <= 320) return `<blockquote><p>${esc(text)}</p></blockquote>`;
+      return `<blockquote><p class="clip">${esc(text.slice(0, 300).replace(/\s+\S*$/, ''))}…</p>` +
+        `<p class="full" hidden>${esc(text)}</p><button class="more">Read full note</button></blockquote>`;
+    }).join('');
+    el.querySelectorAll('.more').forEach(b => b.addEventListener('click', () => {
+      const q = b.closest('blockquote');
+      const open = !q.querySelector('.full').hidden;
+      q.querySelector('.full').hidden = open;
+      q.querySelector('.clip').hidden = !open;
+      b.textContent = open ? 'Read full note' : 'Show less';
+    }));
   }
 
   function esc(s) {
