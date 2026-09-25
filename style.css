@@ -251,6 +251,14 @@ code { background: var(--panel); padding: 0.1rem 0.35rem; border-radius: 3px; }
   color: var(--grade, var(--muted)); font-variant-numeric: tabular-nums;
 }
 .inv-score .grade { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1rem; color: var(--grade, var(--muted)); }
+.swap { margin-top: 0.35rem; font-size: 0.85rem; color: #d8a25e; }
+.avail-bar { margin-bottom: 0.75rem; }
+.avail-bar .modes { margin-left: 0; }
+.best-possible { margin: 0 0 1rem; padding: 0.75rem; background: var(--perk-deep); border-left: 3px solid var(--gold); }
+.best-possible p { margin: 0; }
+.best-possible p:first-child { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; font-weight: 600; }
+.best-possible b { font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; line-height: 1; color: var(--gold); }
+.best-possible .ghost { margin-top: 0.5rem; }
 .inv-empty { color: var(--muted); padding: 1rem 0; }
 .caveat-line { font-size: 0.85rem; margin-top: 1rem; }
 
