@@ -314,6 +314,21 @@ async function main() {
   }
   console.log(`Estimated rolls for ${estimated} weapons with no wish list data`);
 
+  // Safety check: never replace good data with a broken build (Bungie outage, bad wish list...)
+  const prev = await readFile(path.join(OUT, 'meta.json'), 'utf8').then(JSON.parse).catch(() => null);
+  const problems = [];
+  if (groups.size < 200) problems.push(`only ${groups.size} weapons found`);
+  if (prev?.weapons && groups.size < prev.weapons * 0.9) problems.push(`weapons dropped from ${prev.weapons} to ${groups.size}`);
+  if (prev?.wishlistRolls && matched < prev.wishlistRolls * 0.8) problems.push(`wish list rolls dropped from ${prev.wishlistRolls} to ${matched}`);
+  if (problems.length && !process.env.FORCE_PUBLISH_OK) {
+    throw new Error(`Safety check failed, keeping the old data: ${problems.join('; ')}. ` +
+      'If this is expected (e.g. Bungie removed weapons), run the workflow by hand with "force" ticked.');
+  }
+
+  // Real-world usage sampled from recent matches (scripts/collect-usage.mjs), if any
+  const usage = await readFile(path.join(OUT, 'usage', 'usage.json'), 'utf8').then(JSON.parse).catch(() => null);
+  let usageLoadouts = 0;
+
   await rm(path.join(OUT, 'w'), { recursive: true, force: true });
   await mkdir(path.join(OUT, 'w'), { recursive: true });
 
@@ -337,6 +352,23 @@ async function main() {
         weights: list.map(([, r]) => r.w),
         notes: list.map(([, r]) => [...r.notes]), // indices into the weapon's notes list
       };
+    }
+
+    // Usage counts per perk index, for PvE, PvP and both combined
+    const u = usage?.weapons?.[id];
+    if (u) {
+      const toArr = m => {
+        const arr = g.idxToName.map(n => Math.round((m?.perks?.[n] || 0) * 10) / 10);
+        return { n: Math.round((m?.n || 0) * 10) / 10, perks: arr };
+      };
+      const pve = toArr(u.pve), pvp = toArr(u.pvp);
+      const all = { n: Math.round((pve.n + pvp.n) * 10) / 10, perks: pve.perks.map((v, i) => Math.round((v + pvp.perks[i]) * 10) / 10) };
+      if (all.n >= 1) {
+        modes.all.usage = all;
+        if (pve.n >= 1) modes.pve.usage = pve;
+        if (pvp.n >= 1) modes.pvp.usage = pvp;
+        usageLoadouts += all.n;
+      }
     }
 
     const out = {
@@ -370,6 +402,7 @@ async function main() {
     builtAt: new Date().toISOString(),
     weapons: index.length,
     wishlistRolls: matched,
+    usageLoadouts: Math.round(usageLoadouts),
   }, null, 2));
   console.log(`Wrote ${index.length} weapons to ${OUT}`);
 }
