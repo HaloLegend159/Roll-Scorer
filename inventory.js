@@ -165,38 +165,34 @@
     const live = p.itemComponents.sockets.data[iid]?.sockets || [];
     const reusable = p.itemComponents.reusablePlugs?.data?.[iid]?.plugs || {};
     const crafted = (it.state & CRAFTED) !== 0;
+    const toIdx = (ci, h) => ctx.byName[ci].get(state.lookup.perks[h]);
 
+    // slotted: the perk in each column right now. options: every perk this copy can switch to
+    // (both perks of a two-perk column, or every unlocked perk on a crafted gun).
+    const slotted = [];
     const options = ctx.w.columns.map((col, ci) => {
       const si = sockets[ci];
+      slotted.push(si === undefined || !live[si]?.plugHash ? null : toIdx(ci, live[si].plugHash) ?? null);
       if (si === undefined) return [];
-      let hashes = [];
-      // Crafted guns can swap to any unlocked perk, so only the one slotted counts
-      if (!crafted) hashes = (reusable[si] || []).filter(x => x.canInsert !== false && x.enabled !== false).map(x => x.plugItemHash);
+      const hashes = (reusable[si] || []).filter(x => x.canInsert !== false && x.enabled !== false).map(x => x.plugItemHash);
       if (live[si]?.plugHash) hashes.push(live[si].plugHash);
       const idx = new Set();
       for (const h of hashes) {
-        const i = ctx.byName[ci].get(state.lookup.perks[h]);
+        const i = toIdx(ci, h);
         if (i !== undefined) idx.add(i);
       }
       return [...idx];
     });
-    return { iid, id, ctx, where, equipped, crafted, options, scores: {} };
+    return { iid, id, ctx, where, equipped, crafted, options, slotted, scores: {} };
   }
 
-  // Try every combination of the perks the gun actually has; keep the best
+  // Best possible score from this copy's perks, plus the score of what's slotted now
   function bestSetup(item, mode) {
-    const cols = item.options.map(o => (o.length ? o : [null]));
-    let combos = [[]];
-    for (const opts of cols) {
-      combos = combos.flatMap(c => opts.map(o => [...c, o]));
-      if (combos.length > 64) combos = combos.slice(0, 64);
-    }
-    let best = null;
-    for (const picks of combos) {
-      const r = RollScore.score(item.ctx, mode, picks);
-      if (r && (!best || r.total > best.total)) best = { ...r, picks };
-    }
-    return best || { total: null, picks: combos[0] };
+    const best = RollScore.best(item.ctx, mode, item.options, item.slotted);
+    const multi = item.options.some(o => o.length > 1);
+    const now = multi && item.slotted.some(p => p !== null) ? RollScore.score(item.ctx, mode, item.slotted) : null;
+    best.now = now && now.total < (best.total ?? -1) ? now.total : null;
+    return best;
   }
 
   const scoreCache = new Map();
@@ -204,7 +200,7 @@
     for (let i = 0; i < state.items.length; i++) {
       const item = state.items[i];
       if (item.scores[state.mode] === undefined) {
-        const key = `${item.id}|${state.mode}|${item.options.map(o => o.join('.')).join('/')}`;
+        const key = `${item.id}|${state.mode}|${item.options.map(o => o.join('.')).join('/')}|${item.slotted.join('.')}`;
         if (!scoreCache.has(key)) scoreCache.set(key, bestSetup(item, state.mode));
         item.scores[state.mode] = scoreCache.get(key);
       }
@@ -271,7 +267,9 @@
     }[sort]);
 
     const shardCount = state.items.filter(isShard).length;
-    $('#summary').textContent = `Showing ${rows.length} of ${state.items.length} weapons · ${shardCount} shard candidate${shardCount === 1 ? '' : 's'}`;
+    const hasMulti = rows.some(x => x.options.some(o => o.length > 1));
+    $('#summary').textContent = `Showing ${rows.length} of ${state.items.length} weapons · ${shardCount} shard candidate${shardCount === 1 ? '' : 's'}` +
+      (hasMulti ? ' · Scores are the best each gun can reach with its own perks; bold perks are the ones to use' : '');
 
     $('#list').innerHTML = rows.map(rowHtml).join('') ||
       '<li class="inv-empty">No weapons match these filters.</li>';
@@ -280,11 +278,26 @@
   function rowHtml(item) {
     const w = item.ctx.w;
     const s = item.scores[state.mode];
+    // The best perk first; any other perks in the same column after a slash
     const perks = s.picks.map((p, ci) => {
       if (p === null) return '';
-      const extra = item.options[ci].length > 1 ? ' <span class="alt">+' + (item.options[ci].length - 1) + '</span>' : '';
-      return `<li>${esc(item.ctx.perk(p).name)}${extra}</li>`;
+      const name = item.ctx.perk(p).name;
+      const others = item.options[ci].filter(o => o !== p).map(o => item.ctx.perk(o).name);
+      if (!others.length) return `<li>${esc(name)}</li>`;
+      const shown = others.length > 3 ? [...others.slice(0, 3), `${others.length - 3} more`] : others;
+      return `<li class="multi" title="Best pick: ${esc(name)}. This column also has ${esc(others.join(', '))}.">` +
+        `<strong>${esc(name)}</strong> <span class="alt">/ ${shown.map(esc).join(' / ')}</span></li>`;
     }).join('');
+
+    // Slotted perks score lower than the best setup: say what to swap
+    let swapHtml = '';
+    if (s.now !== null && s.now !== undefined) {
+      const swaps = s.picks.map((p, ci) => {
+        const cur = item.slotted[ci];
+        return p !== null && cur !== null && cur !== p ? `${item.ctx.perk(cur).name} → ${item.ctx.perk(p).name}` : null;
+      }).filter(Boolean);
+      swapHtml = `<div class="swap">Slotted now: ${s.now}.${swaps.length ? ` Swap ${swaps.map(esc).join(', ')} to reach ${s.total}.` : ''}</div>`;
+    }
 
     const badges = [];
     if (item.copies > 1 && s.total !== null) {
@@ -302,7 +315,10 @@
       const [label, color] = RollScore.grade(s.total);
       scoreHtml = `<div class="inv-score" style="--grade:${color}"><span class="num">${s.total}</span><span class="grade">${label}</span></div>`;
     }
-    const link = `./#/${encodeURIComponent(w.id)}/${state.mode}/${s.picks.map(p => (p === null ? '_' : p)).join('-')}`;
+    // Open with what's slotted now, plus this copy's perks for the "Your gun's perks" view
+    const openPicks = item.slotted.map((p, ci) => (p !== null ? p : s.picks[ci]));
+    const avail = item.options.map(o => (o.length ? o.join('.') : '_')).join('-');
+    const link = `./#/${encodeURIComponent(w.id)}/${state.mode}/${openPicks.map(p => (p === null ? '_' : p)).join('-')}/${avail}`;
 
     return `<li class="inv-row">
       <a href="${link}" target="_blank" rel="noopener" aria-label="Open ${esc(w.name)} in the roll scorer">
@@ -311,6 +327,7 @@
           <div class="inv-name">${esc(w.name)} ${badges.join('')}</div>
           <div class="inv-sub muted">${esc(w.type)} · ${esc(item.where)}${item.equipped ? ' · Equipped' : ''}</div>
           <ul class="inv-perks">${perks}</ul>
+          ${swapHtml}
         </div>
         ${scoreHtml}
       </a>
