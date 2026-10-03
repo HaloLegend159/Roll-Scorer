@@ -69,10 +69,23 @@
 
     const items = [];
     let present = false;
+    const base = `/Destiny2/${m.membershipType}/Profile/${m.membershipId}/Character/${chars[0].characterId}/Vendors`;
+    state.single = {};
     for (const vh of state.lookup.xurVendors || []) {
       if (v.vendors?.data?.[vh]) present = true;
-      const comps = v.itemComponents?.[vh] || {};
-      for (const [idx, sale] of Object.entries(v.sales?.data?.[vh]?.saleItems || {})) {
+      let saleItems = v.sales?.data?.[vh]?.saleItems || {};
+      let comps = v.itemComponents?.[vh] || {};
+      // The all-vendors request leaves out weapon perks, so ask for this vendor on its own,
+      // the way the Destiny app does
+      if (Object.keys(saleItems).length) {
+        const one = await api(`${base}/${vh}/?components=400,402,305,310`).catch(() => null);
+        if (one) {
+          state.single[vh] = one;
+          saleItems = one.sales?.data || saleItems;
+          comps = one.itemComponents || comps;
+        }
+      }
+      for (const [idx, sale] of Object.entries(saleItems)) {
         const entry = state.lookup.items[sale.itemHash];
         if (!entry) continue;
         const live = comps.sockets?.data?.[idx]?.sockets || [];
@@ -203,6 +216,16 @@
     </li>`;
   }
 
+  // Xûr is around from the Friday reset (17:00 UTC) to the Tuesday reset
+  function xurHereNow() {
+    const now = new Date();
+    const fri = new Date(now);
+    fri.setUTCHours(17, 0, 0, 0);
+    fri.setUTCDate(fri.getUTCDate() - ((fri.getUTCDay() - 5 + 7) % 7)); // most recent Friday
+    if (fri > now) fri.setUTCDate(fri.getUTCDate() - 7);
+    return now - fri < 4 * 24 * 3600 * 1000;
+  }
+
   // Xûr arrives at the Friday reset (17:00 UTC) and leaves at the Tuesday reset
   function nextArrival() {
     const d = new Date();
@@ -228,6 +251,13 @@
       }
       stock ||= await fromPublic();
 
+      if ((!stock || !stock.items.length) && xurHereNow()) {
+        status(configured
+          ? 'Xûr is here this weekend. <button class="primary" id="xur-signin2">Sign in to see his weapons and rolls</button>'
+          : 'Xûr is here this weekend, but his list isn\'t available yet. Check back after the next daily update.');
+        $('#xur-signin2')?.addEventListener('click', signIn);
+        return;
+      }
       if (!stock || (!stock.present && !stock.items.length)) {
         status(`Xûr isn't here right now. He arrives at the weekly reset, ${esc(nextArrival())} your time, and stays until Tuesday's reset.`);
         return;
@@ -263,10 +293,12 @@
     const v = state.raw;
     const out = { source: state.source, xurVendors: state.lookup.xurVendors, vendors: {} };
     for (const vh of state.lookup.xurVendors || []) {
-      const sales = v?.sales?.data?.[vh]?.saleItems || {};
-      const comps = v?.itemComponents?.[vh] || {};
+      const one = state.single?.[vh];
+      const sales = one?.sales?.data || v?.sales?.data?.[vh]?.saleItems || {};
+      const comps = one?.itemComponents || v?.itemComponents?.[vh] || {};
       out.vendors[vh] = {
         present: !!v?.vendors?.data?.[vh],
+        askedSingly: !!one,
         sales: Object.entries(sales).slice(0, 4).map(([i, s]) => ({ i, itemHash: s.itemHash, weapon: state.lookup.items[s.itemHash]?.[0] })),
         componentKeys: Object.keys(comps),
         sockets: Object.fromEntries(Object.entries(comps.sockets?.data || {}).slice(0, 3)),
