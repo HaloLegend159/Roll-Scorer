@@ -125,7 +125,7 @@
   // Rolls aren't known (Xûr's copy rolls when you buy it): show what to hope for instead
   function chaseHtml(item) {
     const s = item.ctx.stats(state.mode);
-    if (!s.rolls.length) return '<div class="inv-sub muted">Random roll. No recommended rolls for this gun yet.</div>';
+    if (!s.rolls.length) return '<div class="inv-sub muted">No recommended rolls for this gun yet.</div>';
     const traits = item.ctx.w.columns.map((c, ci) => (c.weight >= 3 ? ci : -1)).filter(ci => ci >= 0);
     const tally = new Map();
     s.rolls.forEach((roll, k) => {
@@ -135,9 +135,9 @@
       tally.set(key, (tally.get(key) || 0) + s.weights[k]);
     });
     const top = [...tally].sort((a, b) => b[1] - a[1])[0];
-    if (!top) return '<div class="inv-sub muted">Random roll.</div>';
+    if (!top) return '';
     const names = top[0].split('.').map(p => esc(item.ctx.perk(Number(p)).name)).join(' + ');
-    return `<div class="inv-sub muted">Random roll. Hope for <strong class="chase">${names}</strong>.</div>`;
+    return `<div class="inv-sub muted">Look for <strong class="chase">${names}</strong>.</div>`;
   }
 
   function scoreFor(item) {
@@ -174,7 +174,7 @@
 
     let scoreHtml;
     if (!s) {
-      const label = state.source === 'account' ? 'Random roll' : configured ? 'Sign in' : 'Roll hidden';
+      const label = state.source === 'account' ? 'Roll unknown' : configured ? 'Sign in' : 'Roll hidden';
       scoreHtml = `<div class="inv-score"><span class="num">?</span><span class="grade">${label}</span></div>`;
     } else if (s.total === null) {
       scoreHtml = '<div class="inv-score"><span class="num">–</span><span class="grade">No data</span></div>';
@@ -245,7 +245,7 @@
       const count = `${state.items.length} weapon${state.items.length === 1 ? '' : 's'}`;
       $('#xur-sub').textContent = stock.source === 'account'
         ? (anyHidden
-          ? `${count}. Bungie doesn't show a roll for ${state.items.every(i => !i.known) ? 'these' : 'some of these'} until you buy them, so each one shows the perks to hope for.`
+          ? `${count}. Bungie didn't send the perks for ${state.items.every(i => !i.known) ? 'these' : 'some of these'}, so each one shows the perks to look for. Check the roll in-game before buying.`
           : `${count}, with the exact rolls your character sees.`)
         : `${count}.${anyHidden ? ' Bungie only shares the exact rolls with signed-in players.' : ''}`;
       $('#xur-signin').hidden = !(configured && stock.source !== 'account' && anyHidden);
