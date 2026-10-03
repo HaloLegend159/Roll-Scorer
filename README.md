@@ -29,6 +29,14 @@ The workflow runs daily. If a build looks broken (weapon or roll counts drop sha
 publish and keeps the old data; GitHub emails you about the failed run. To publish anyway, run it by
 hand with **force** ticked.
 
+## Pages
+
+- **Score a roll**: pick perks on any weapon. Craftable weapons are labeled.
+- **My inventory**: sign in with Bungie to score everything you own.
+- **Xûr**: the random-roll weapons Xûr is selling, scored. The daily update saves his list from
+  Bungie's public data (`scripts/collect-xur.mjs`, plus an extra run Fridays after he arrives).
+  If Bungie doesn't share the exact rolls publicly, signed-in players still see their own.
+
 ## How the score works
 
 For the chosen activity (All / PvE / PvP):

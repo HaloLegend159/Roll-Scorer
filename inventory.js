@@ -71,6 +71,10 @@
     };
     try { localStorage.setItem(TOKEN_KEY, JSON.stringify(memToken)); } catch {}
     justSignedIn = true;
+    // Signed in from another page (e.g. Xûr): send them back there
+    let back = null;
+    try { back = sessionStorage.getItem('rs-return'); sessionStorage.removeItem('rs-return'); } catch {}
+    if (back && /^[\w-]+\.html$/.test(back)) { location.replace(back); await new Promise(() => {}); }
   }
 
   class AuthError extends Error {}
@@ -307,6 +311,7 @@
     }
     if (w.estimated) badges.push('<span class="badge">Estimated</span>');
     if (item.crafted) badges.push('<span class="badge">Crafted</span>');
+    else if (w.craftable) badges.push('<span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>');
 
     let scoreHtml;
     if (s.total === null) {

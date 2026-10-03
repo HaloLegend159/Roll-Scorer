@@ -60,7 +60,8 @@
     $('#w-icon').src = w.icon ? BUNGIE + w.icon : '';
     $('#w-icon').hidden = !w.icon;
     $('#w-name').textContent = w.name;
-    $('#w-type').textContent = [w.tier, w.type].filter(Boolean).join(' ');
+    $('#w-type').innerHTML = esc([w.tier, w.type].filter(Boolean).join(' ')) +
+      (w.craftable ? ' <span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>' : '');
     document.title = `${w.name} · Roll Scorer`;
     render();
   }
@@ -550,7 +551,7 @@
     list.innerHTML = hits.length ? hits.map((w, i) =>
       `<li role="option" id="opt-${i}" aria-selected="${i === active}" data-i="${i}">
         <img src="${w.icon ? BUNGIE + w.icon : ''}" alt="" loading="lazy">
-        <span><span class="r-name">${esc(w.name)}</span><br><span class="r-type">${esc(w.type)}</span></span>
+        <span><span class="r-name">${esc(w.name)}</span><br><span class="r-type">${esc(w.type)}${w.c ? ' · Craftable' : ''}</span></span>
         <span class="r-count">${w.n ? `${w.n} rolls` : w.est ? 'estimated' : 'no data'}</span>
       </li>`).join('') : '<li aria-disabled="true">No weapons match that name.</li>';
     list.hidden = false;
