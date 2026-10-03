@@ -36,6 +36,7 @@ async function loadManifest() {
       version: 'local',
       items: JSON.parse(await readFile(path.join(dir, 'items.json'), 'utf8')),
       plugSets: JSON.parse(await readFile(path.join(dir, 'plugsets.json'), 'utf8')),
+      vendors: JSON.parse(await readFile(path.join(dir, 'vendors.json'), 'utf8').catch(() => '{}')),
     };
   }
   const headers = API_KEY ? { 'X-API-Key': API_KEY } : {};
@@ -45,11 +46,12 @@ async function loadManifest() {
   }
   const paths = manifest.Response.jsonWorldComponentContentPaths.en;
   console.log('Downloading manifest', manifest.Response.version);
-  const [items, plugSets] = await Promise.all([
+  const [items, plugSets, vendors] = await Promise.all([
     getJson(BUNGIE + paths.DestinyInventoryItemDefinition),
     getJson(BUNGIE + paths.DestinyPlugSetDefinition),
+    getJson(BUNGIE + paths.DestinyVendorDefinition).catch(() => ({})),
   ]);
-  return { version: manifest.Response.version, items, plugSets };
+  return { version: manifest.Response.version, items, plugSets, vendors };
 }
 
 // ---------- Wish list ----------
@@ -181,7 +183,7 @@ function slug(s) {
 // ---------- Main ----------
 
 async function main() {
-  const [{ version, items, plugSets }, wishText] = await Promise.all([
+  const [{ version, items, plugSets, vendors }, wishText] = await Promise.all([
     loadManifest(),
     process.env.LOCAL_WISHLIST
       ? readFile(process.env.LOCAL_WISHLIST, 'utf8')
@@ -211,6 +213,7 @@ async function main() {
         frame: frameName(item, items),
         columns: cols,
         sockets: {},
+        craftable: false,
       };
       groups.set(name, g);
     } else {
@@ -218,6 +221,7 @@ async function main() {
     }
     g.hashes.push(Number(hash));
     g.sockets[hash] = cols.map(c => c.socket); // which socket holds each perk column
+    if (item.inventory?.recipeItemHash) g.craftable = true; // has a crafting pattern
     hashToGroup.set(Number(hash), g);
   }
   console.log(`Found ${groups.size} random-roll weapons`);
@@ -344,7 +348,11 @@ async function main() {
   await mkdir(path.join(OUT, 'w'), { recursive: true });
 
   const index = [];
-  const lookup = { items: {}, perks: perkNames };
+  // Xûr's vendor entries (he has more than one inventory), for the Xûr page
+  const xurVendors = Object.entries(vendors || {})
+    .filter(([, v]) => /^x[uû]r\b|strange gear/i.test(v?.displayProperties?.name || ''))
+    .map(([h]) => Number(h));
+  const lookup = { items: {}, perks: perkNames, xurVendors };
   const usedIds = new Set();
   const sorted = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
   for (const g of sorted) {
@@ -395,6 +403,7 @@ async function main() {
         perks: c.perks.map(p => ({ name: p.name, icon: p.icon, desc: p.desc })),
       })),
       notes: g.notes,
+      craftable: g.craftable,
       estimated: g.estimated || null,
       modes,
     };
@@ -403,6 +412,7 @@ async function main() {
       id, name: g.name, type: g.type, tier: g.tier, icon: g.icon,
       n: g.estimated ? 0 : modes.all.rolls.length,
       ...(g.estimated ? { est: 1 } : {}),
+      ...(g.craftable ? { c: 1 } : {}),
     });
   }
 
