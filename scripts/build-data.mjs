@@ -348,6 +348,17 @@ async function main() {
   await mkdir(path.join(OUT, 'w'), { recursive: true });
 
   const index = [];
+  // Vendors (like Xûr) and old copies can use a different item ID for the same perk.
+  // Map every plug whose name is a real weapon perk, so any version of it is recognised.
+  const knownPerkNames = new Set();
+  for (const g of groups.values()) for (const c of g.columns) for (const p of c.perks) knownPerkNames.add(p.name);
+  let extraPerkIds = 0;
+  for (const [h, it] of Object.entries(items)) {
+    const n = it?.displayProperties?.name;
+    if (it?.plug && n && knownPerkNames.has(n) && !perkNames[h]) { perkNames[h] = n; extraPerkIds++; }
+  }
+  console.log(`Mapped ${extraPerkIds} extra perk IDs`);
+
   // Xûr's vendor entries (he has more than one inventory), for the Xûr page
   const xurVendors = Object.entries(vendors || {})
     .filter(([, v]) => /^x[uû]r\b|strange gear/i.test(v?.displayProperties?.name || ''))
