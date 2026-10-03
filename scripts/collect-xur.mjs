@@ -14,11 +14,15 @@ async function main() {
   const vendorHashes = lookup.xurVendors || [];
   if (!vendorHashes.length) throw new Error('No Xûr vendor entries in lookup.json; run the data build first');
 
-  const res = await fetch(`${ROOT}/Platform/Destiny2/Vendors/?components=400,402,305,310`, {
-    headers: { 'X-API-Key': API_KEY },
-  });
-  const j = await res.json().catch(() => null);
-  if (!j || j.ErrorCode !== 1) throw new Error(`Bungie API: ${j?.Message || res.status}`);
+  const get = async comps => {
+    const res = await fetch(`${ROOT}/Platform/Destiny2/Vendors/?components=${comps}`, { headers: { 'X-API-Key': API_KEY } });
+    const j = await res.json().catch(() => null);
+    if (!j || j.ErrorCode !== 1) console.log(`Bungie said (${comps}): ${j?.ErrorStatus || res.status} ${j?.Message || ''}`);
+    return j?.ErrorCode === 1 ? j : null;
+  };
+  const j = (await get('400,402,305,310')) || (await get('400,402'));
+  if (!j) throw new Error('Bungie public vendor data unavailable');
+  console.log('Vendors in public data:', Object.keys(j.Response?.sales?.data || {}).length);
   const r = j.Response || {};
   const sales = r.sales?.data || {};
   const vendors = r.vendors?.data || {};
