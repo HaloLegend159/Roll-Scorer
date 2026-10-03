@@ -65,6 +65,7 @@
     if (!chars.length) return null;
     const v = await api(`/Destiny2/${m.membershipType}/Profile/${m.membershipId}/Character/${chars[0].characterId}/Vendors/?components=400,402,305,310&filter=0`);
     if (!v) return null;
+    state.raw = v;
 
     const items = [];
     let present = false;
@@ -121,6 +122,24 @@
     return { ...raw, ctx, options, known: options.some(o => o.length), scores: {} };
   }
 
+  // Rolls aren't known (Xûr's copy rolls when you buy it): show what to hope for instead
+  function chaseHtml(item) {
+    const s = item.ctx.stats(state.mode);
+    if (!s.rolls.length) return '<div class="inv-sub muted">Random roll. No recommended rolls for this gun yet.</div>';
+    const traits = item.ctx.w.columns.map((c, ci) => (c.weight >= 3 ? ci : -1)).filter(ci => ci >= 0);
+    const tally = new Map();
+    s.rolls.forEach((roll, k) => {
+      const ps = roll.filter(p => traits.includes(item.ctx.colOf[p]));
+      if (ps.length < 2) return;
+      const key = ps.slice(0, 2).join('.');
+      tally.set(key, (tally.get(key) || 0) + s.weights[k]);
+    });
+    const top = [...tally].sort((a, b) => b[1] - a[1])[0];
+    if (!top) return '<div class="inv-sub muted">Random roll.</div>';
+    const names = top[0].split('.').map(p => esc(item.ctx.perk(Number(p)).name)).join(' + ');
+    return `<div class="inv-sub muted">Random roll. Hope for <strong class="chase">${names}</strong>.</div>`;
+  }
+
   function scoreFor(item) {
     if (!item.known) return null;
     return (item.scores[state.mode] ||= RollScore.best(item.ctx, state.mode, item.options));
@@ -155,7 +174,8 @@
 
     let scoreHtml;
     if (!s) {
-      scoreHtml = `<div class="inv-score"><span class="num">?</span><span class="grade">${configured ? 'Sign in' : 'Roll hidden'}</span></div>`;
+      const label = state.source === 'account' ? 'Random roll' : configured ? 'Sign in' : 'Roll hidden';
+      scoreHtml = `<div class="inv-score"><span class="num">?</span><span class="grade">${label}</span></div>`;
     } else if (s.total === null) {
       scoreHtml = '<div class="inv-score"><span class="num">–</span><span class="grade">No data</span></div>';
     } else {
@@ -174,7 +194,9 @@
         <div class="inv-main">
           <div class="inv-name">${esc(w.name)} ${badges.join('')}</div>
           <div class="inv-sub muted">${esc(w.type)}</div>
-          ${perks ? `<ul class="inv-perks">${perks}</ul>` : '<div class="inv-sub muted">Exact perks show when you sign in.</div>'}
+          ${perks ? `<ul class="inv-perks">${perks}</ul>`
+            : state.source === 'account' ? chaseHtml(item)
+            : '<div class="inv-sub muted">Exact perks show when you sign in.</div>'}
         </div>
         ${scoreHtml}
       </a>
@@ -222,15 +244,39 @@
 
       const count = `${state.items.length} weapon${state.items.length === 1 ? '' : 's'}`;
       $('#xur-sub').textContent = stock.source === 'account'
-        ? `${count}, with the exact rolls your character sees.`
+        ? (anyHidden
+          ? `${count}. Bungie doesn't show a roll for ${state.items.every(i => !i.known) ? 'these' : 'some of these'} until you buy them, so each one shows the perks to hope for.`
+          : `${count}, with the exact rolls your character sees.`)
         : `${count}.${anyHidden ? ' Bungie only shares the exact rolls with signed-in players.' : ''}`;
       $('#xur-signin').hidden = !(configured && stock.source !== 'account' && anyHidden);
       $('#xur-msg').hidden = true;
       $('#xur').hidden = false;
       render();
+      if (/[?&]debug=1/.test(location.search)) showDebug();
     } catch (err) {
       status(esc(err.message || err));
     }
+  }
+
+  // xur.html?debug=1 shows what Bungie returned, to copy and share when something looks off
+  function showDebug() {
+    const v = state.raw;
+    const out = { source: state.source, xurVendors: state.lookup.xurVendors, vendors: {} };
+    for (const vh of state.lookup.xurVendors || []) {
+      const sales = v?.sales?.data?.[vh]?.saleItems || {};
+      const comps = v?.itemComponents?.[vh] || {};
+      out.vendors[vh] = {
+        present: !!v?.vendors?.data?.[vh],
+        sales: Object.entries(sales).slice(0, 4).map(([i, s]) => ({ i, itemHash: s.itemHash, weapon: state.lookup.items[s.itemHash]?.[0] })),
+        componentKeys: Object.keys(comps),
+        sockets: Object.fromEntries(Object.entries(comps.sockets?.data || {}).slice(0, 3)),
+        reusablePlugs: Object.fromEntries(Object.entries(comps.reusablePlugs?.data || {}).slice(0, 2)),
+      };
+    }
+    const pre = document.createElement('pre');
+    pre.className = 'debug';
+    pre.textContent = JSON.stringify(out, null, 1);
+    $('#xur').append(pre);
   }
 
   $('#xur-signin').addEventListener('click', signIn);

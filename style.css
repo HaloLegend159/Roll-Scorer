@@ -248,6 +248,8 @@ code { background: var(--panel); padding: 0.1rem 0.35rem; border-radius: 3px; }
 .badge { font-size: 0.72rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 3px; background: var(--perk-deep); color: var(--muted); }
 .badge.good { color: var(--gold); }
 .badge.craft { color: #e0875a; background: rgba(224, 135, 90, 0.14); }
+.chase { color: var(--text); font-weight: 600; }
+pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1px solid var(--line); font-size: 0.75rem; overflow: auto; max-height: 60vh; user-select: all; }
 .xur-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1.8rem; margin: 0; }
 .inv-bar .primary { margin: 0; }
 .inv-score { display: grid; justify-items: end; min-width: 5.5rem; }
