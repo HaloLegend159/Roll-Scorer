@@ -62,12 +62,15 @@
           <select id="f-sort">
             <option value="score-desc">Score, high to low</option>
             <option value="score-asc">Score, low to high</option>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
             <option value="name">Name</option>
             <option value="type">Type</option>
           </select>
         </label>
         <label class="check"><input id="f-dupes" type="checkbox"> Duplicates only</label>
         <label class="check"><input id="f-shard" type="checkbox"> Shard candidates</label>
+        <label class="check"><input id="f-post" type="checkbox"> <span id="f-post-label">Postmaster only</span></label>
       </div>
 
       <p id="summary" class="muted"></p>

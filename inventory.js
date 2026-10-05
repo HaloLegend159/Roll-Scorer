@@ -5,6 +5,7 @@
   const STATE_KEY = 'rs-oauth-state';
   const CLASS_NAMES = ['Titan', 'Hunter', 'Warlock'];
   const CRAFTED = 8; // ItemState flag
+  const POSTMASTER = 215593132; // "Lost Items" bucket
   const $ = s => document.querySelector(s);
 
   const state = {
@@ -140,7 +141,9 @@
     const chars = p.characters?.data || {};
     for (const [cid, c] of Object.entries(chars)) {
       const cls = CLASS_NAMES[c.classType] || 'Character';
-      for (const it of p.characterInventories?.data?.[cid]?.items || []) raw.push({ it, where: cls, equipped: false });
+      for (const it of p.characterInventories?.data?.[cid]?.items || []) {
+        raw.push({ it, where: cls, equipped: false, postmaster: it.bucketHash === POSTMASTER });
+      }
       for (const it of p.characterEquipment?.data?.[cid]?.items || []) raw.push({ it, where: cls, equipped: true });
     }
     if (!p.itemComponents?.sockets?.data) {
@@ -161,7 +164,7 @@
   }
 
   // Turn one inventory item into perk options per column
-  function readItem({ it, where, equipped }, p) {
+  function readItem({ it, where, equipped, postmaster }, p) {
     const [id, sockets] = state.lookup.items[it.itemHash];
     const ctx = state.weapons.get(id);
     if (!ctx) return null;
@@ -187,7 +190,10 @@
       }
       return [...idx];
     });
-    return { iid, id, ctx, where, equipped, crafted, options, slotted, scores: {} };
+    // Item IDs count upward as items are created, so a bigger ID means acquired more recently
+    let order = 0n;
+    try { order = BigInt(iid); } catch {}
+    return { iid, id, ctx, where, equipped, crafted, options, slotted, scores: {}, postmaster: !!postmaster, order };
   }
 
   // Best possible score from this copy's perks, plus the score of what's slotted now
@@ -254,11 +260,15 @@
     const dupes = $('#f-dupes').checked;
     const shard = $('#f-shard').checked;
     const sort = $('#f-sort').value;
+    const post = $('#f-post').checked;
+    const postCount = state.items.filter(x => x.postmaster).length;
+    $('#f-post-label').textContent = `Postmaster only (${postCount})`;
 
     let rows = state.items.filter(x =>
       (!term || x.ctx.w.name.toLowerCase().includes(term)) &&
       (!type || x.ctx.w.type === type) &&
       (!dupes || x.copies > 1) &&
+      (!post || x.postmaster) &&
       (!shard || isShard(x)));
 
     const sc = x => x.scores[state.mode].total;
@@ -266,6 +276,8 @@
     rows.sort({
       'score-desc': (a, b) => (sc(b) ?? -1) - (sc(a) ?? -1) || byName(a, b),
       'score-asc': (a, b) => (sc(a) ?? 999) - (sc(b) ?? 999) || byName(a, b),
+      newest: (a, b) => (a.order === b.order ? 0 : a.order > b.order ? -1 : 1),
+      oldest: (a, b) => (a.order === b.order ? 0 : a.order < b.order ? -1 : 1),
       name: byName,
       type: (a, b) => a.ctx.w.type.localeCompare(b.ctx.w.type) || byName(a, b),
     }[sort]);
@@ -309,6 +321,7 @@
         ? `<span class="badge good">Best of ${item.copies} copies</span>`
         : `<span class="badge">Weaker copy (best is ${item.bestOther})</span>`);
     }
+    if (item.postmaster) badges.push('<span class="badge post" title="Sitting at the Postmaster. Pick it up or it can be lost when the Postmaster fills up.">Postmaster</span>');
     if (w.estimated) badges.push('<span class="badge">Estimated</span>');
     if (item.crafted) badges.push('<span class="badge">Crafted</span>');
     else if (w.craftable) badges.push('<span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>');
@@ -388,7 +401,7 @@
     await scoreAll();
     render();
   }));
-  ['#f-name', '#f-type', '#f-sort', '#f-dupes', '#f-shard'].forEach(sel =>
+  ['#f-name', '#f-type', '#f-sort', '#f-dupes', '#f-shard', '#f-post'].forEach(sel =>
     $(sel).addEventListener(sel === '#f-name' ? 'input' : 'change', render));
 
   start();
