@@ -1,8 +1,8 @@
-# Roll Scorer
+# D2 Roll Check
 
 Score any Destiny 2 weapon roll from 0 to 100 against the rolls the community recommends.
 
-**Use it here: https://halolegend159.github.io/Roll-Scorer/**
+**Use it here: https://d2rollcheck.com**
 
 ## What it does
 
@@ -47,7 +47,7 @@ Data refreshes once a day.
 ## Sign-in and privacy
 
 - Signing in is optional. Scoring a roll, Compare and the rankings work without it.
-- Sign-in happens on Bungie's own site. Roll Scorer never sees your password.
+- Sign-in happens on Bungie's own site. D2 Roll Check never sees your password.
 - Your inventory is read by your own browser, directly from Bungie. This site has no server and
   stores nothing about you. Nobody else, including the site's owner, can see your inventory.
 - The site only changes something on your account when you press an **Apply** button, and then it
@@ -63,7 +63,7 @@ Data refreshes once a day.
 
 ## Support
 
-Roll Scorer is free. If it saved you some vault space, there's a tip jar on the site.
+D2 Roll Check is free. If it saved you some vault space, there's a tip jar on the site.
 
-Roll Scorer is a fan project and is not affiliated with or endorsed by Bungie. Destiny 2 and its
+D2 Roll Check is a fan project and is not affiliated with or endorsed by Bungie. Destiny 2 and its
 images are property of Bungie.

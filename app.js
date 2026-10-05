@@ -61,7 +61,7 @@
     $('#w-icon').src = w.icon ? BUNGIE + w.icon : '';
     $('#w-icon').hidden = !w.icon;
     $('#w-name').innerHTML = esc(w.name) + (window.RollFavs ? ' ' + RollFavs.button(w.id, w.name) : '');
-    document.title = `${w.name} · Roll Scorer`;
+    document.title = `${w.name} · D2 Roll Check`;
     render();
   }
 

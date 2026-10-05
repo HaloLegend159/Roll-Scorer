@@ -202,7 +202,7 @@
         item.options.map(o => (o.length ? o.join('.') : '_')).join('-');
     }
     return `<li class="inv-row">
-      <a href="${link}" target="_blank" rel="noopener" aria-label="Open ${esc(w.name)} in the roll scorer">
+      <a href="${link}" target="_blank" rel="noopener" aria-label="Open ${esc(w.name)} on the Score a roll page">
         <img src="${w.icon ? BUNGIE + w.icon : ''}" alt="" width="56" height="56" loading="lazy">
         <div class="inv-main">
           <div class="inv-name">${esc(w.name)} ${badges.join('')}</div>
