@@ -59,9 +59,7 @@
     $('#weapon').hidden = false;
     $('#w-icon').src = w.icon ? BUNGIE + w.icon : '';
     $('#w-icon').hidden = !w.icon;
-    $('#w-name').textContent = w.name;
-    $('#w-type').innerHTML = esc([w.tier, w.type].filter(Boolean).join(' ')) +
-      (w.craftable ? ' <span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>' : '');
+    $('#w-name').innerHTML = esc(w.name) + (window.RollFavs ? ' ' + RollFavs.button(w.id, w.name) : '');
     document.title = `${w.name} · Roll Scorer`;
     render();
   }
@@ -230,6 +228,15 @@
     };
   }
 
+  // "#3 of 41 Auto Rifles by usage": how the gun itself stands, separate from the roll score
+  function gunRankHtml() {
+    if (!window.RollScore?.rank || !state.weapon) return '';
+    const r = RollScore.rank(state.index, state.weapon.id, ['all', 'pve', 'pvp'].indexOf(state.mode));
+    if (!r || r.rank === null) return '';
+    const plural = /s$/.test(state.weapon.type) ? state.weapon.type : state.weapon.type + 's';
+    return ` · <a class="gun-rank" href="compare.html#${encodeURIComponent(state.weapon.id)}" title="Based on copies seen in sampled ${modeWord() || 'recent'} matches. Popular isn't always best.">#${r.rank} of ${r.of} ${esc(plural)} by usage</a>`;
+  }
+
   function grade(n) {
     if (n >= 90) return ['God roll', 'var(--gold)'];
     if (n >= 75) return ['Keeper', '#9ccf7a'];
@@ -291,6 +298,9 @@
       colsEl.appendChild(el);
     });
 
+    // Type line: tier, type, where the gun ranks for this activity, craftable
+    $('#w-type').innerHTML = esc([w.tier, w.type].filter(Boolean).join(' ')) + gunRankHtml() +
+      (w.craftable ? ' <span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>' : '');
     renderStats();
     renderCombos(s);
     renderScore(s, cs);
@@ -798,6 +808,10 @@
       btn.textContent = 'Copy the address bar instead';
     }
     setTimeout(() => { btn.textContent = 'Copy link to this roll'; }, 2000);
+  });
+
+  window.RollFavs?.wire(() => {
+    if (state.weapon) $('#w-name').innerHTML = esc(state.weapon.name) + ' ' + RollFavs.button(state.weapon.id, state.weapon.name);
   });
 
   const tip = $('#tip');

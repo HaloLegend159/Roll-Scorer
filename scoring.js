@@ -164,5 +164,53 @@ window.RollScore = (() => {
     return ['Shard it', 'var(--bad)'];
   }
 
-  return { prepare, score, best, grade };
+  // Stat numbers as shown in-game for a set of picks (same math as the Score a roll page)
+  function shownStat(points, d) {
+    const pts = d.interp;
+    if (!pts.length) return Math.max(0, Math.min(d.max || 100, points));
+    const v = Math.max(pts[0][0], Math.min(pts[pts.length - 1][0], points));
+    let end = pts.findIndex(p => p[0] > v);
+    if (end < 0) end = pts.length - 1;
+    const start = Math.max(0, end - 1);
+    const [x0, y0] = pts[start], [x1, y1] = pts[end];
+    if (x1 === x0) return y0;
+    const y = y0 + ((v - x0) / (x1 - x0)) * (y1 - y0);
+    return Math.abs(y % 1) === 0.5 ? 2 * Math.round(y / 2) : Math.round(y);
+  }
+  function statLine(ctx, picks) {
+    const st = ctx.w.stats;
+    if (!st) return [];
+    const pts = { ...st.base };
+    (picks || []).forEach(p => {
+      if (p === null || p === undefined) return;
+      for (const [h, v] of Object.entries(ctx.perk(p).s || {})) pts[h] = (pts[h] || 0) + v;
+    });
+    return st.list.map(d => ({ name: d.name, num: d.num, value: shownStat(pts[d.h] || 0, d) }));
+  }
+
+  // The most recommended complete roll: start from the top-weighted roll, then improve it
+  function bestRoll(ctx, mode) {
+    const s = ctx.stats(mode);
+    if (!s.rolls.length) return null;
+    const start = ctx.w.columns.map(() => null);
+    for (const p of s.rolls[0]) start[ctx.colOf[p]] = p;
+    const options = ctx.w.columns.map((c, ci) => c.perks.map((_, j) => ctx.colStart[ci] + j));
+    const b = best(ctx, mode, options.map((o, ci) => (start[ci] !== null ? [start[ci], ...o.filter(x => x !== start[ci])] : o)), start);
+    return b.total === null ? null : b.picks;
+  }
+
+  // Where a gun stands among guns of its type, by copies seen in matches.
+  // modeIdx: 0 all, 1 PvE, 2 PvP. Returns null when there isn't enough data to say.
+  const MIN_TYPE_SAMPLE = 50;
+  function rank(index, id, modeIdx) {
+    const me = index.find(w => w.id === id);
+    if (!me) return null;
+    const peers = index.filter(w => w.type === me.type);
+    const n = w => (w.u ? w.u[modeIdx] : 0);
+    const total = peers.reduce((a, w) => a + n(w), 0);
+    if (total < MIN_TYPE_SAMPLE || !n(me)) return { rank: null, of: peers.length, share: 0, n: n(me), total };
+    return { rank: 1 + peers.filter(w => n(w) > n(me)).length, of: peers.length, share: (100 * n(me)) / total, n: n(me), total };
+  }
+
+  return { prepare, score, best, grade, statLine, bestRoll, rank };
 })();

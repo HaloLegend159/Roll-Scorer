@@ -33,6 +33,9 @@ hand with **force** ticked.
 
 - **Score a roll**: pick perks on any weapon. Craftable weapons are labeled.
 - **My inventory**: sign in with Bungie to score everything you own.
+- **Compare**: put up to three guns side by side (best roll, stats, usage rank), and see every gun
+  of a type ranked by how often it shows up in sampled matches. The ☆ next to any weapon saves it
+  as a favorite in your browser; favorites are quick picks here and a filter in My inventory.
 - **Xûr**: the random-roll weapons Xûr is selling, scored. The daily update saves his list from
   Bungie's public data (`scripts/collect-xur.mjs`, plus an extra run Fridays after he arrives).
   If Bungie doesn't share the exact rolls publicly, signed-in players still see their own.

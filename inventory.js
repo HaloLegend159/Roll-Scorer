@@ -261,6 +261,9 @@
     const shard = $('#f-shard').checked;
     const sort = $('#f-sort').value;
     const post = $('#f-post').checked;
+    const favOnly = $('#f-fav').checked;
+    const favs = new Set(RollFavs.list());
+    $('#f-fav-label').textContent = `Favorites only (${state.items.filter(x => favs.has(x.id)).length})`;
     const postCount = state.items.filter(x => x.postmaster).length;
     $('#f-post-label').textContent = `Postmaster only (${postCount})`;
 
@@ -269,6 +272,7 @@
       (!type || x.ctx.w.type === type) &&
       (!dupes || x.copies > 1) &&
       (!post || x.postmaster) &&
+      (!favOnly || favs.has(x.id)) &&
       (!shard || isShard(x)));
 
     const sc = x => x.scores[state.mode].total;
@@ -338,7 +342,8 @@
     const avail = item.options.map(o => (o.length ? o.join('.') : '_')).join('-');
     const link = `./#/${encodeURIComponent(w.id)}/${state.mode}/${openPicks.map(p => (p === null ? '_' : p)).join('-')}/${avail}`;
 
-    return `<li class="inv-row">
+    return `<li class="inv-row has-star">
+      ${RollFavs.button(w.id, w.name)}
       <a href="${link}" target="_blank" rel="noopener" aria-label="Open ${esc(w.name)} in the roll scorer">
         <img src="${w.icon ? BUNGIE + w.icon : ''}" alt="" width="56" height="56" loading="lazy">
         <div class="inv-main">
@@ -393,6 +398,7 @@
     $('#retry').addEventListener('click', () => start());
   }
 
+  RollFavs.wire(() => { if (state.items.length) render(); });
   $('#signin').addEventListener('click', signIn);
   $('#signout').addEventListener('click', () => { clearToken(); state.items = []; show('signed-out'); });
   $('#refresh').addEventListener('click', () => loadInventory().catch(showError));
@@ -401,7 +407,7 @@
     await scoreAll();
     render();
   }));
-  ['#f-name', '#f-type', '#f-sort', '#f-dupes', '#f-shard', '#f-post'].forEach(sel =>
+  ['#f-name', '#f-type', '#f-sort', '#f-dupes', '#f-shard', '#f-post', '#f-fav'].forEach(sel =>
     $(sel).addEventListener(sel === '#f-name' ? 'input' : 'change', render));
 
   start();
