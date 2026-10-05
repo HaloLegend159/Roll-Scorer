@@ -137,14 +137,18 @@
     const p = await api(`/Destiny2/${m.membershipType}/Profile/${m.membershipId}/?components=102,200,201,205,300,305,310`);
 
     const raw = [];
-    for (const it of p.profileInventory?.data?.items || []) raw.push({ it, where: 'Vault', equipped: false });
     const chars = p.characters?.data || {};
+    state.mt = m.membershipType;
+    // Vault items are changed through the most recently played character
+    state.mainChar = Object.entries(chars)
+      .sort((a, b) => new Date(b[1].dateLastPlayed || 0) - new Date(a[1].dateLastPlayed || 0))[0]?.[0] || null;
+    for (const it of p.profileInventory?.data?.items || []) raw.push({ it, where: 'Vault', equipped: false, cid: state.mainChar });
     for (const [cid, c] of Object.entries(chars)) {
       const cls = CLASS_NAMES[c.classType] || 'Character';
       for (const it of p.characterInventories?.data?.[cid]?.items || []) {
-        raw.push({ it, where: cls, equipped: false, postmaster: it.bucketHash === POSTMASTER });
+        raw.push({ it, where: cls, equipped: false, postmaster: it.bucketHash === POSTMASTER, cid });
       }
-      for (const it of p.characterEquipment?.data?.[cid]?.items || []) raw.push({ it, where: cls, equipped: true });
+      for (const it of p.characterEquipment?.data?.[cid]?.items || []) raw.push({ it, where: cls, equipped: true, cid });
     }
     if (!p.itemComponents?.sockets?.data) {
       throw new Error('Bungie didn\'t return perk data. Check that the app has the "Read your Destiny 2 information" scope.');
@@ -156,6 +160,8 @@
     await loadWeapons(ids);
 
     state.items = owned.map(r => readItem(r, p)).filter(Boolean);
+    // Let the Score a roll page apply perks for weapons opened from here
+    RollApply.saveAll(Object.fromEntries(state.items.filter(x => x.applyInfo).map(x => [x.iid, x.applyInfo])));
     loading('Scoring…');
     await scoreAll();
     buildTypeFilter();
@@ -164,7 +170,7 @@
   }
 
   // Turn one inventory item into perk options per column
-  function readItem({ it, where, equipped, postmaster }, p) {
+  function readItem({ it, where, equipped, postmaster, cid }, p) {
     const [id, sockets] = state.lookup.items[it.itemHash];
     const ctx = state.weapons.get(id);
     if (!ctx) return null;
@@ -177,6 +183,7 @@
     // slotted: the perk in each column right now. options: every perk this copy can switch to
     // (both perks of a two-perk column, or every unlocked perk on a crafted gun).
     const slotted = [];
+    const plugs = {}; // perk index -> [socket, exact plug id on this copy], for switching perks in game
     const options = ctx.w.columns.map((col, ci) => {
       const si = sockets[ci];
       slotted.push(si === undefined || !live[si]?.plugHash ? null : toIdx(ci, live[si].plugHash) ?? null);
@@ -186,14 +193,20 @@
       const idx = new Set();
       for (const h of hashes) {
         const i = toIdx(ci, h);
-        if (i !== undefined) idx.add(i);
+        if (i === undefined) continue;
+        idx.add(i);
+        if (!plugs[i] || h === live[si]?.plugHash) plugs[i] = [si, h];
       }
       return [...idx];
     });
+    // Perks can be switched through the API on normal drops with a choice in some column.
+    // Crafted guns are reshaped at the Enclave instead, and Postmaster items must be picked up first.
+    const canApply = !crafted && !postmaster && cid && options.some(o => o.length > 1);
+    const applyInfo = canApply ? { mt: state.mt, ch: cid, plugs, slotted: [...slotted] } : null;
     // Item IDs count upward as items are created, so a bigger ID means acquired more recently
     let order = 0n;
     try { order = BigInt(iid); } catch {}
-    return { iid, id, ctx, where, equipped, crafted, options, slotted, scores: {}, postmaster: !!postmaster, order };
+    return { iid, id, ctx, where, equipped, crafted, options, slotted, scores: {}, postmaster: !!postmaster, order, applyInfo };
   }
 
   // Best possible score from this copy's perks, plus the score of what's slotted now
@@ -316,7 +329,9 @@
         const cur = item.slotted[ci];
         return p !== null && cur !== null && cur !== p ? `${item.ctx.perk(cur).name} → ${item.ctx.perk(p).name}` : null;
       }).filter(Boolean);
-      swapHtml = `<div class="swap">Slotted now: ${s.now}.${swaps.length ? ` Swap ${swaps.map(esc).join(', ')} to reach ${s.total}.` : ''}</div>`;
+      const btn = RollApply.enabled && item.applyInfo && RollApply.pending(item.applyInfo, s.picks).length
+        ? ` <button class="ghost apply" data-apply="${item.iid}">Apply these perks in game</button>` : '';
+      swapHtml = `<div class="swap">Slotted now: ${s.now}.${swaps.length ? ` Swap ${swaps.map(esc).join(', ')} to reach ${s.total}.` : ''}${btn}</div>`;
     }
 
     const badges = [];
@@ -340,7 +355,8 @@
     // Open with what's slotted now, plus this copy's perks for the "Your gun's perks" view
     const openPicks = item.slotted.map((p, ci) => (p !== null ? p : s.picks[ci]));
     const avail = item.options.map(o => (o.length ? o.join('.') : '_')).join('-');
-    const link = `./#/${encodeURIComponent(w.id)}/${state.mode}/${openPicks.map(p => (p === null ? '_' : p)).join('-')}/${avail}`;
+    const link = `./#/${encodeURIComponent(w.id)}/${state.mode}/${openPicks.map(p => (p === null ? '_' : p)).join('-')}/${avail}` +
+      (item.applyInfo ? `/${item.iid}` : '');
 
     return `<li class="inv-row has-star">
       ${RollFavs.button(w.id, w.name)}
@@ -350,10 +366,10 @@
           <div class="inv-name">${esc(w.name)} ${badges.join('')}</div>
           <div class="inv-sub muted">${esc(w.type)} · ${esc(item.where)}${item.equipped ? ' · Equipped' : ''}</div>
           <ul class="inv-perks">${perks}</ul>
-          ${swapHtml}
         </div>
         ${scoreHtml}
       </a>
+      ${swapHtml}
     </li>`;
   }
 
@@ -367,6 +383,11 @@
         (m.usageLoadouts ? ` · ${m.usageLoadouts.toLocaleString()} weapons seen in real matches` : '');
     }).catch(() => {});
 
+    if (RollApply.enabled) {
+      $('#access-note').textContent = 'The site reads your inventory. It can also switch a weapon between the perks it already has, ' +
+        'but only when you press an Apply button. It never moves, equips or deletes anything. Your login stays in this browser ' +
+        'and is never sent anywhere except Bungie. Bungie logs you out of this site after about an hour.';
+    }
     if (!configured) { show('setup'); return; }
     try {
       await finishSignIn();
@@ -399,6 +420,27 @@
   }
 
   RollFavs.wire(() => { if (state.items.length) render(); });
+
+  // "Apply these perks in game" on a row
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('button[data-apply]');
+    if (!b) return;
+    const item = state.items.find(x => x.iid === b.dataset.apply);
+    if (!item) return;
+    b.disabled = true;
+    b.textContent = 'Applying…';
+    const res = await RollApply.apply(item.iid, item.applyInfo, item.scores[state.mode].picks);
+    if (res.changed) {
+      item.slotted = [...item.applyInfo.slotted];
+      item.scores = {};
+      await scoreAll();
+    }
+    render();
+    const msg = $('#apply-msg');
+    msg.textContent = `${item.ctx.w.name}: ${res.message}`;
+    msg.className = res.ok ? 'apply-msg ok' : 'apply-msg bad';
+    msg.hidden = false;
+  });
   $('#signin').addEventListener('click', signIn);
   $('#signout').addEventListener('click', () => { clearToken(); state.items = []; show('signed-out'); });
   $('#refresh').addEventListener('click', () => loadInventory().catch(showError));

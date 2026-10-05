@@ -10,6 +10,7 @@
     colOf: [],      // perk index -> column index
     colStart: [],   // column index -> first perk index
     avail: null,    // perks this copy of the gun has (from the inventory page), per column
+    iid: null,      // which owned copy this is, when opened from the inventory page
     onlyAvail: true,
     rs: null,       // RollScore context for "best possible"
   };
@@ -301,6 +302,7 @@
     // Type line: tier, type, where the gun ranks for this activity, craftable
     $('#w-type').innerHTML = esc([w.tier, w.type].filter(Boolean).join(' ')) + gunRankHtml() +
       (w.craftable ? ' <span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>' : '');
+    renderApply();
     renderStats();
     renderCombos(s);
     renderScore(s, cs);
@@ -519,6 +521,36 @@
 
   function basisText(e) { return e.weapons === 1 ? e.basis.replace(/s$/, '') : e.basis; }
 
+  // ---------- Apply perks in game (weapons opened from My inventory) ----------
+
+  function renderApply(message, ok) {
+    const btn = $('#apply-game'), msg = $('#apply-game-msg');
+    if (!btn) return;
+    const info = window.RollApply?.enabled && state.iid ? RollApply.get(state.iid) : null;
+    const todo = info ? RollApply.pending(info, state.picks) : [];
+    btn.hidden = !info;
+    btn.disabled = !todo.length;
+    btn.textContent = !info ? '' : todo.length
+      ? `Apply ${todo.length === 1 ? 'this perk' : 'these perks'} in game` : 'These perks are slotted in game';
+    if (message !== undefined) {
+      msg.textContent = message;
+      msg.className = ok ? 'apply-msg ok' : 'apply-msg bad';
+      msg.hidden = false;
+    } else if (todo.length) {
+      msg.hidden = true;
+    }
+  }
+
+  $('#apply-game')?.addEventListener('click', async () => {
+    const btn = $('#apply-game');
+    const info = RollApply.get(state.iid);
+    if (!info) return;
+    btn.disabled = true;
+    btn.textContent = 'Applying…';
+    const res = await RollApply.apply(state.iid, info, state.picks);
+    renderApply(res.message, res.ok);
+  });
+
   // ---------- Weapon stats ----------
 
   // Turn raw stat points into the number the game shows, using the weapon type's curve
@@ -593,7 +625,7 @@
     .then(h => { historyDays = h?.days || []; if (state.weapon) renderTrend(); })
     .catch(() => { historyDays = []; });
 
-  const TREND = { share: '#b08f2c', act: '#3d8bd0' };
+  const TREND = { share: '#b08f2c' };
 
   function renderTrend() {
     let el = $('#trend');
@@ -620,85 +652,59 @@
       for (let k = Math.max(0, i - 6); k <= i; k++) { c += C[k]; t += D[k].total; }
       return t ? (100 * c) / t : 0;
     });
-    const act = D.map(d => d.act);
     const seen = C.reduce((a, b) => a + b, 0);
 
     const W = Math.max(280, Math.min(720, el.clientWidth || 640));
-    const L = 8, R = 56, PH = 96, GAP = 44, TOP = 22;
+    const L = 8, R = 56, PH = 120, TOP = 22, H = TOP + PH + 22;
     const x = i => L + (i * (W - L - R)) / (n - 1);
-    const fmtAct = v => (v >= 1e6 ? (v / 1e6).toFixed(v >= 1e7 ? 0 : 1) + 'M' : v >= 1e3 ? Math.round(v / 1e3) + 'k' : String(Math.round(v)));
     const fmtShare = v => (v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2)) + '%';
     const day = d => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-    function panel(vals, y0, color, title, fmt) {
-      const real = vals.filter(v => v !== null);
-      const max = Math.max(...real, 0) * 1.15 || 1;
-      const y = v => y0 + PH - (v / max) * PH;
-      let path = '', pen = false;
-      vals.forEach((v, i) => {
-        if (v === null) { pen = false; return; }
-        path += `${pen ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`;
-        pen = true;
-      });
-      const last = vals.reduce((a, v, i) => (v !== null ? i : a), -1);
-      const grid = [0.5, 1].map(f => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(max * f / 1.15)}" y2="${y(max * f / 1.15)}"/>` +
-        `<text class="tick" x="${W - R + 6}" y="${y(max * f / 1.15) + 4}">${fmt(max * f / 1.15)}</text>`).join('');
-      return `<text class="ptitle" x="${L}" y="${y0 - 8}">${title}</text>${grid}` +
-        `<line class="base" x1="${L}" x2="${W - R}" y1="${y0 + PH}" y2="${y0 + PH}"/>` +
-        `<path d="${path}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
-        (last >= 0 ? `<circle cx="${x(last)}" cy="${y(vals[last])}" r="4" fill="${color}" stroke="var(--panel)" stroke-width="2"/>` : '') +
-        `<circle class="hov" data-p="${title}" r="4" fill="${color}" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`;
-    }
-    const y1 = TOP, y2 = TOP + PH + GAP, H = y2 + PH + 22;
-    const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Usage over time for ${esc(state.weapon.name)}">` +
-      panel(share, y1, TREND.share, 'Share of all weapons seen (7-day average)', fmtShare) +
-      panel(act, y2, TREND.act, 'All of Destiny 2: activities finished per day', fmtAct) +
+    const max = Math.max(...share, 0) * 1.15 || 1;
+    const y = v => TOP + PH - (v / max) * PH;
+    const path = share.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join('');
+    const grid = [0.5, 1].map(f => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(max * f / 1.15)}" y2="${y(max * f / 1.15)}"/>` +
+      `<text class="tick" x="${W - R + 6}" y="${y(max * f / 1.15) + 4}">${fmtShare(max * f / 1.15)}</text>`).join('');
+    const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Share of all weapons seen over time for ${esc(state.weapon.name)}">` +
+      `<text class="ptitle" x="${L}" y="${TOP - 8}">Share of all weapons seen (7-day average)</text>${grid}` +
+      `<line class="base" x1="${L}" x2="${W - R}" y1="${TOP + PH}" y2="${TOP + PH}"/>` +
+      `<path d="${path}" fill="none" stroke="${TREND.share}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
+      `<circle cx="${x(n - 1)}" cy="${y(share[n - 1])}" r="4" fill="${TREND.share}" stroke="var(--panel)" stroke-width="2"/>` +
       `<text class="tick" x="${L}" y="${H - 4}">${day(D[0].d)}</text><text class="tick" x="${W - R}" y="${H - 4}" text-anchor="end">${day(D[n - 1].d)}</text>` +
-      `<line class="cross" y1="${y1}" y2="${y2 + PH}" visibility="hidden"/>` +
+      `<line class="cross" y1="${TOP}" y2="${TOP + PH}" visibility="hidden"/>` +
+      `<circle class="hov" r="4" fill="${TREND.share}" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>` +
       `<rect class="hit" x="0" y="0" width="${W}" height="${H}" fill="transparent"/></svg>`;
 
-    // Plain-words takeaway: is a change the gun, or just the player count?
+    // Plain-words takeaway
     let takeaway = '';
-    const firstAct = act.filter(v => v !== null).slice(0, 3), lastAct = act.filter(v => v !== null).slice(-3);
-    const avg = a => a.reduce((p, c) => p + c, 0) / a.length;
     if (n >= 8) {
       const s0 = share[Math.min(6, n - 2)], s1 = share[n - 1];
-      const sChg = s0 ? Math.round((100 * (s1 - s0)) / s0) : 0;
-      const aChg = firstAct.length && lastAct.length && avg(firstAct) ? Math.round((100 * (avg(lastAct) - avg(firstAct))) / avg(firstAct)) : null;
-      const aText = aChg === null ? '' : ` Overall activity ${aChg > 2 ? `rose ${aChg}%` : aChg < -2 ? `fell ${-aChg}%` : 'stayed about level'} over the same days.`;
-      if (sChg <= -15) takeaway = `This gun's share fell ${-sChg}%, so players are picking it less. That's about the gun, not the player count.${aText}`;
-      else if (sChg >= 15) takeaway = `This gun's share grew ${sChg}%, so players are picking it more.${aText}`;
-      else if (aChg !== null && aChg <= -15) takeaway = `This gun's share held steady while overall activity fell ${-aChg}%. Fewer sightings here would just mean fewer players.`;
-      else takeaway = `This gun's share has held steady.${aText}`;
+      const chg = s0 ? Math.round((100 * (s1 - s0)) / s0) : 0;
+      takeaway = chg <= -15 ? `Players are picking this gun less: its share fell ${-chg}%.`
+        : chg >= 15 ? `Players are picking this gun more: its share grew ${chg}%.`
+        : 'This gun\'s share has held steady.';
     }
-    const table = `<details><summary>Show as table</summary><table><thead><tr><th>Day</th><th>Copies seen</th><th>Share (7-day)</th><th>Activities per day</th></tr></thead><tbody>${
-      D.map((d, i) => `<tr><td>${day(d.d)}</td><td>${C[i]}</td><td>${fmtShare(share[i])}</td><td>${act[i] === null ? '–' : fmtAct(act[i])}</td></tr>`).join('')}</tbody></table></details>`;
+    const table = `<details><summary>Show as table</summary><table><thead><tr><th>Day</th><th>Copies seen</th><th>Share (7-day)</th></tr></thead><tbody>${
+      D.map((d, i) => `<tr><td>${day(d.d)}</td><td>${C[i]}</td><td>${fmtShare(share[i])}</td></tr>`).join('')}</tbody></table></details>`;
 
     el.innerHTML = `<h3>Usage over time</h3>` +
       (takeaway ? `<p class="takeaway">${takeaway}</p>` : '') +
       `<div class="chart">${svg}<div class="ttip" hidden></div></div>` +
-      `<p class="small muted">Share is this gun's copies out of every weapon seen in sampled matches, so it doesn't drop just because fewer people are playing. ` +
-      `${seen < 30 ? `Only ${seen} copies seen so far, so treat this as rough. ` : ''}The lower chart is an estimate of the whole game's activity, from Bungie's match counter.</p>` + table;
+      `<p class="small muted">Share is this gun's copies out of every weapon seen in sampled matches. It only moves when players switch guns, not when more or fewer people are playing.` +
+      `${seen < 30 ? ` Only ${seen} copies seen so far, so treat this as rough.` : ''}</p>` + table;
 
-    // Hover: crosshair through both panels plus one tooltip with every value
-    const box = el.querySelector('.chart'), tipEl = el.querySelector('.ttip'), cross = el.querySelector('.cross');
-    const hov = [...el.querySelectorAll('.hov')];
-    const yFor = (vals, y0) => { const m = Math.max(...vals.filter(v => v !== null), 0) * 1.15 || 1; return v => y0 + PH - (v / m) * PH; };
-    const ys = [yFor(share, y1), yFor(act, y2)];
+    // Hover: crosshair and a tooltip with that day's numbers
+    const box = el.querySelector('.chart'), tipEl = el.querySelector('.ttip'), cross = el.querySelector('.cross'), hov = el.querySelector('.hov');
     const move = ev => {
       const r = box.getBoundingClientRect();
       const px = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
       const i = Math.max(0, Math.min(n - 1, Math.round(((px - L) / (W - L - R)) * (n - 1))));
       cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
-      [share, act].forEach((vals, k) => {
-        if (vals[i] === null) { hov[k].setAttribute('visibility', 'hidden'); return; }
-        hov[k].setAttribute('cx', x(i)); hov[k].setAttribute('cy', ys[k](vals[i])); hov[k].setAttribute('visibility', 'visible');
-      });
-      tipEl.innerHTML = `<strong>${day(D[i].d)}</strong><br>Share: ${fmtShare(share[i])}<br>Copies seen that day: ${C[i]}<br>Activities: ${act[i] === null ? 'no estimate' : fmtAct(act[i])}`;
+      hov.setAttribute('cx', x(i)); hov.setAttribute('cy', y(share[i])); hov.setAttribute('visibility', 'visible');
+      tipEl.innerHTML = `<strong>${day(D[i].d)}</strong><br>Share: ${fmtShare(share[i])}<br>Copies seen that day: ${C[i]}`;
       tipEl.hidden = false;
       tipEl.style.left = Math.min(W - 170, Math.max(0, x(i) + 10)) + 'px';
     };
-    const leave = () => { tipEl.hidden = true; cross.setAttribute('visibility', 'hidden'); hov.forEach(h => h.setAttribute('visibility', 'hidden')); };
+    const leave = () => { tipEl.hidden = true; cross.setAttribute('visibility', 'hidden'); hov.setAttribute('visibility', 'hidden'); };
     const hit = el.querySelector('.hit');
     hit.addEventListener('mousemove', move);
     hit.addEventListener('touchstart', move, { passive: true });
@@ -718,11 +724,12 @@
     if (!state.weapon) return;
     const p = state.picks.map(x => (x === null ? '_' : x)).join('-');
     const a = state.avail ? '/' + state.avail.map(o => (o.length ? o.join('.') : '_')).join('-') : '';
-    history.replaceState(null, '', `#/${state.weapon.id}/${state.mode}/${p}${a}`);
+    history.replaceState(null, '', `#/${state.weapon.id}/${state.mode}/${p}${a}${a && state.iid ? '/' + state.iid : ''}`);
   }
 
   function readHash() {
-    const [, id, mode, p, a] = location.hash.split('/');
+    const [, id, mode, p, a, iid] = location.hash.split('/');
+    state.iid = /^\d+$/.test(iid || '') ? iid : null;
     if (!id) return;
     if (['all', 'pve', 'pvp'].includes(mode)) state.mode = mode;
     const picks = (p || '').split('-').map(x => (x === '_' || x === '' ? null : Number(x)));

@@ -5,4 +5,8 @@
 window.ROLL_SCORER_CONFIG = {
   bungieApiKey: '36ace87d87704e00ae3c93f00b2901f5',
   bungieClientId: '55110',
+  // Lets signed-in players switch a weapon's perks from the site. Needs the
+  // "Move or equip Destiny gear and other items" scope ticked on the Bungie app.
+  // Set to false to turn the Apply buttons off.
+  allowPerkChanges: true,
 };

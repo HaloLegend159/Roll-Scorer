@@ -275,6 +275,17 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .inv-empty { color: var(--muted); padding: 1rem 0; }
 .caveat-line { font-size: 0.85rem; margin-top: 1rem; }
 
+/* Apply perks in game */
+.ghost.apply { border-color: var(--gold); color: var(--gold); }
+.ghost.apply:hover:not(:disabled) { background: var(--gold); color: var(--bg); }
+.ghost.apply:disabled { border-color: var(--line); color: var(--muted); }
+.apply-msg { font-size: 0.9rem; margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; background: var(--panel); border-left: 3px solid var(--line); }
+.apply-msg.ok { border-left-color: #6fbf73; }
+.apply-msg.bad { border-left-color: var(--bad); }
+.actions .apply-msg { margin: 0; align-self: center; }
+.inv-row.has-star > .swap { grid-column: 2; margin: 0; padding: 0 0.9rem 0.6rem 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.inv-row .swap .apply { padding: 0.25rem 0.6rem; font-size: 0.85rem; }
+
 /* Favorites star */
 .fav {
   background: none; border: 0; padding: 0 0.15rem; font-size: 1.15rem; line-height: 1;

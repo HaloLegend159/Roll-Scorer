@@ -36,6 +36,10 @@ hand with **force** ticked.
 - **Compare**: put up to three guns side by side (best roll, stats, usage rank), and see every gun
   of a type ranked by how often it shows up in sampled matches. The ☆ next to any weapon saves it
   as a favorite in your browser; favorites are quick picks here and a filter in My inventory.
+- **Apply perks in game**: with `allowPerkChanges: true` in `config.js` and the "Move or equip
+  Destiny gear" scope ticked on the Bungie app, signed-in players get an Apply button that switches
+  a weapon between the perks it already has (`apply.js`). Bungie only allows this in orbit, in a
+  social space, or offline. Crafted weapons and Postmaster items aren't covered.
 - **Xûr**: the random-roll weapons Xûr is selling, scored. The daily update saves his list from
   Bungie's public data (`scripts/collect-xur.mjs`, plus an extra run Fridays after he arrives).
   If Bungie doesn't share the exact rolls publicly, signed-in players still see their own.
@@ -45,8 +49,8 @@ hand with **force** ticked.
 - **Stats**: the Score a roll page shows each weapon's stats and how the picked perks change them,
   worked out from Bungie's game data. Masterworks, mods and conditional bonuses aren't included.
 - **Usage over time**: `collect-usage.mjs` also keeps a day-by-day tally in `data/usage/history.json`
-  (120 days). The chart shows a gun's share of all weapons seen next to an estimate of the whole
-  game's activity, so a drop in players isn't mistaken for a drop in the gun's popularity.
+  (120 days). The chart shows a gun's share of all weapons seen, which only moves when players
+  switch guns, not when more or fewer people are playing.
 
 ## How the score works
 
