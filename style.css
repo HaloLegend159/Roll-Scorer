@@ -200,11 +200,15 @@ main { flex: 1; padding: 2rem clamp(1rem, 4vw, 3rem); }
 .foot p { margin: 0.2rem 0; }
 
 /* Page tabs */
-.tabs { display: flex; gap: 0.25rem; margin: 0 0 1.25rem; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs {
+  display: flex; gap: 0.25rem; margin: 0 0 1.25rem; border-bottom: 1px solid var(--line);
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none; /* swipe sideways on phones, no scrollbar */
+}
+.tabs::-webkit-scrollbar { display: none; }
 .tabs a { white-space: nowrap; }
 .tabs a {
   padding: 0.5rem 0.9rem; text-decoration: none; color: var(--muted); font-weight: 600;
-  border-bottom: 3px solid transparent; margin-bottom: -1px;
+  border-bottom: 3px solid transparent;
 }
 .tabs a:hover { color: var(--text); }
 .tabs a[aria-current="page"] { color: var(--text); border-bottom-color: var(--perk); }
