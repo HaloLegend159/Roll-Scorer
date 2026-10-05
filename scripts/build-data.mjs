@@ -395,6 +395,12 @@ async function main() {
     const f = (histByFamily[family(wid)] ||= new Array(hist.days.length).fill(0));
     arr.forEach((v, i) => { f[i] += v; });
   }
+  const ownUse = id => {
+    const o = usage?.weapons?.[id];
+    if (!o) return null;
+    const pve = Math.round(o.pve?.n || 0), pvp = Math.round(o.pvp?.n || 0);
+    return pve + pvp ? [pve + pvp, pve, pvp] : null;
+  };
   const weaponHistory = id => {
     const a = histByFamily[family(id)];
     return a && a.some(v => v > 0) ? a : null;
@@ -486,6 +492,7 @@ async function main() {
       })),
       notes: g.notes,
       craftable: g.craftable,
+      frame: g.frame || '',
       stats: g.stats || null,
       history: weaponHistory(id),
       estimated: g.estimated || null,
@@ -497,6 +504,9 @@ async function main() {
       n: g.estimated ? 0 : modes.all.rolls.length,
       ...(g.estimated ? { est: 1 } : {}),
       ...(g.craftable ? { c: 1 } : {}),
+      ...(g.frame ? { f: g.frame } : {}),
+      // Copies of this exact gun seen in matches: [all, PvE, PvP]. Used to rank guns of one type.
+      ...(ownUse(id) ? { u: ownUse(id) } : {}),
     });
   }
 
