@@ -405,14 +405,7 @@ async function main() {
     const a = histByFamily[family(id)];
     return a && a.some(v => v > 0) ? a : null;
   };
-  // Match ids count up across the whole game, so the gap between two days' newest ids
-  // is roughly how many activities all players finished in between
-  const historyDays = (hist?.days || []).map((d, i, all) => {
-    const prev = all[i - 1];
-    const gap = prev ? (new Date(d.t) - new Date(prev.t)) / 86400000 : 0;
-    const act = prev && gap > 0.4 && gap < 3.5 && d.tip > prev.tip ? Math.round((d.tip - prev.tip) / gap) : null;
-    return { d: d.d, total: d.total, act };
-  });
+  const historyDays = (hist?.days || []).map(d => ({ d: d.d, total: d.total }));
 
   await rm(path.join(OUT, 'w'), { recursive: true, force: true });
   await mkdir(path.join(OUT, 'w'), { recursive: true });
