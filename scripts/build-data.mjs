@@ -37,6 +37,8 @@ async function loadManifest() {
       items: JSON.parse(await readFile(path.join(dir, 'items.json'), 'utf8')),
       plugSets: JSON.parse(await readFile(path.join(dir, 'plugsets.json'), 'utf8')),
       vendors: JSON.parse(await readFile(path.join(dir, 'vendors.json'), 'utf8').catch(() => '{}')),
+      statDefs: JSON.parse(await readFile(path.join(dir, 'stats.json'), 'utf8').catch(() => '{}')),
+      statGroups: JSON.parse(await readFile(path.join(dir, 'statgroups.json'), 'utf8').catch(() => '{}')),
     };
   }
   const headers = API_KEY ? { 'X-API-Key': API_KEY } : {};
@@ -46,12 +48,14 @@ async function loadManifest() {
   }
   const paths = manifest.Response.jsonWorldComponentContentPaths.en;
   console.log('Downloading manifest', manifest.Response.version);
-  const [items, plugSets, vendors] = await Promise.all([
+  const [items, plugSets, vendors, statDefs, statGroups] = await Promise.all([
     getJson(BUNGIE + paths.DestinyInventoryItemDefinition),
     getJson(BUNGIE + paths.DestinyPlugSetDefinition),
     getJson(BUNGIE + paths.DestinyVendorDefinition).catch(() => ({})),
+    getJson(BUNGIE + paths.DestinyStatDefinition).catch(() => ({})),
+    getJson(BUNGIE + paths.DestinyStatGroupDefinition).catch(() => ({})),
   ]);
-  return { version: manifest.Response.version, items, plugSets, vendors };
+  return { version: manifest.Response.version, items, plugSets, vendors, statDefs, statGroups };
 }
 
 // ---------- Wish list ----------
@@ -141,6 +145,7 @@ function perkColumns(item, items, plugSets) {
       byName.set(name, {
         name,
         icon: plug.displayProperties.icon || '',
+        inv: plugStats(plug),
         desc: plug.displayProperties.description || '',
         type: type.replace(/^enhanced\s+/i, ''),
         enhanced,
@@ -151,6 +156,44 @@ function perkColumns(item, items, plugSets) {
     columns.push({ label: perks[0].type || 'Perk', perks, socket: idx });
   }
   return hasRandomRolls ? columns : null;
+}
+
+// Stat changes a perk (or frame) applies. Skips bonuses that only apply in some situations.
+function plugStats(plug) {
+  const out = {};
+  for (const s of plug?.investmentStats || []) {
+    if (s.isConditionallyActive || !s.value) continue;
+    out[s.statTypeHash] = (out[s.statTypeHash] || 0) + s.value;
+  }
+  return out;
+}
+
+// A weapon's base stats and how raw stat points turn into the numbers shown in-game.
+// The game stores "investment" points and runs them through a per-weapon-type curve.
+function weaponStats(item, items, statDefs, statGroups) {
+  const group = statGroups?.[item.stats?.statGroupHash];
+  if (!group?.scaledStats?.length) return null;
+  const base = {};
+  for (const s of item.investmentStats || []) {
+    if (s.isConditionallyActive) continue;
+    base[s.statTypeHash] = (base[s.statTypeHash] || 0) + s.value;
+  }
+  // The frame (intrinsic perk) can carry stats too
+  const cat = item.sockets?.socketCategories?.find(c => c.socketCategoryHash === INTRINSIC_CATEGORY);
+  const frame = items[item.sockets?.socketEntries?.[cat?.socketIndexes?.[0]]?.singleInitialItemHash];
+  for (const [h, v] of Object.entries(plugStats(frame))) base[h] = (base[h] || 0) + v;
+
+  const list = group.scaledStats
+    .filter(s => base[s.statHash] !== undefined && statDefs?.[s.statHash]?.displayProperties?.name)
+    .map(s => ({
+      h: s.statHash,
+      name: statDefs[s.statHash].displayProperties.name,
+      max: s.maximumValue,
+      num: !!s.displayAsNumeric,
+      interp: (s.displayInterpolation || []).map(p => [p.value, p.weight]),
+    }));
+  if (!list.length) return null;
+  return { list, base: Object.fromEntries(list.map(s => [s.h, base[s.h]])) };
 }
 
 function frameName(item, items) {
@@ -183,7 +226,7 @@ function slug(s) {
 // ---------- Main ----------
 
 async function main() {
-  const [{ version, items, plugSets, vendors }, wishText] = await Promise.all([
+  const [{ version, items, plugSets, vendors, statDefs, statGroups }, wishText] = await Promise.all([
     loadManifest(),
     process.env.LOCAL_WISHLIST
       ? readFile(process.env.LOCAL_WISHLIST, 'utf8')
@@ -211,6 +254,7 @@ async function main() {
         icon: item.displayProperties.icon || '',
         screenshot: item.screenshot || '',
         frame: frameName(item, items),
+        stats: weaponStats(item, items, statDefs, statGroups),
         columns: cols,
         sockets: {},
         craftable: false,
@@ -344,6 +388,26 @@ async function main() {
     }
   }
 
+  // Day-by-day usage history (written by collect-usage.mjs), pooled like usage above
+  const hist = await readFile(path.join(OUT, 'usage', 'history.json'), 'utf8').then(JSON.parse).catch(() => null);
+  const histByFamily = {};
+  for (const [wid, arr] of Object.entries(hist?.w || {})) {
+    const f = (histByFamily[family(wid)] ||= new Array(hist.days.length).fill(0));
+    arr.forEach((v, i) => { f[i] += v; });
+  }
+  const weaponHistory = id => {
+    const a = histByFamily[family(id)];
+    return a && a.some(v => v > 0) ? a : null;
+  };
+  // Match ids count up across the whole game, so the gap between two days' newest ids
+  // is roughly how many activities all players finished in between
+  const historyDays = (hist?.days || []).map((d, i, all) => {
+    const prev = all[i - 1];
+    const gap = prev ? (new Date(d.t) - new Date(prev.t)) / 86400000 : 0;
+    const act = prev && gap > 0.4 && gap < 3.5 && d.tip > prev.tip ? Math.round((d.tip - prev.tip) / gap) : null;
+    return { d: d.d, total: d.total, act };
+  });
+
   await rm(path.join(OUT, 'w'), { recursive: true, force: true });
   await mkdir(path.join(OUT, 'w'), { recursive: true });
 
@@ -385,6 +449,7 @@ async function main() {
     }
 
     // Usage counts per perk index, for PvE, PvP and both combined
+    const statSet = g.stats ? new Set(g.stats.list.map(s => s.h)) : null;
     const u = usageByFamily[family(id)];
     if (u) {
       const toArr = m => {
@@ -411,10 +476,18 @@ async function main() {
       columns: g.columns.map(c => ({
         label: c.label,
         weight: c.weight,
-        perks: c.perks.map(p => ({ name: p.name, icon: p.icon, desc: p.desc })),
+        perks: c.perks.map(p => {
+          const o = { name: p.name, icon: p.icon, desc: p.desc };
+          // Stat changes, limited to the stats this weapon shows
+          const s = Object.fromEntries(Object.entries(p.inv || {}).filter(([h]) => statSet?.has(Number(h))));
+          if (Object.keys(s).length) o.s = s;
+          return o;
+        }),
       })),
       notes: g.notes,
       craftable: g.craftable,
+      stats: g.stats || null,
+      history: weaponHistory(id),
       estimated: g.estimated || null,
       modes,
     };
@@ -428,6 +501,7 @@ async function main() {
   }
 
   await writeFile(path.join(OUT, 'index.json'), JSON.stringify(index));
+  await writeFile(path.join(OUT, 'history.json'), JSON.stringify({ days: historyDays }));
   await writeFile(path.join(OUT, 'lookup.json'), JSON.stringify(lookup));
   await writeFile(path.join(OUT, 'meta.json'), JSON.stringify({
     manifestVersion: version,

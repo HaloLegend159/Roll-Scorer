@@ -178,6 +178,31 @@ async function main() {
       for (const k of Object.keys(m.perks)) m.perks[k] = Math.round(m.perks[k] * 100) / 100;
     }
   }
+  // 4) Day-by-day history for the usage-over-time chart: copies of each gun seen per day,
+  // the day's total, and the newest match id (a measure of how busy the whole game is)
+  const histPath = path.join(USAGE_DIR, 'history.json');
+  const hist = await readFile(histPath, 'utf8').then(JSON.parse).catch(() => ({ days: [], w: {} }));
+  const today = new Date().toISOString().slice(0, 10);
+  if (hist.days.at(-1)?.d !== today) {
+    hist.days.push({ d: today, t: '', tip: 0, total: 0 });
+    for (const arr of Object.values(hist.w)) arr.push(0);
+  }
+  const day = hist.days.at(-1);
+  day.t = new Date().toISOString();
+  day.tip = tip;
+  day.total += seenInstances.size;
+  for (const [wid, modes] of Object.entries(counts)) {
+    const arr = (hist.w[wid] ||= new Array(hist.days.length).fill(0));
+    arr[arr.length - 1] += Object.values(modes).reduce((n, c) => n + c.n, 0);
+  }
+  const KEEP_DAYS = 120;
+  while (hist.days.length > KEEP_DAYS) {
+    hist.days.shift();
+    for (const arr of Object.values(hist.w)) arr.shift();
+  }
+  for (const [wid, arr] of Object.entries(hist.w)) if (!arr.some(v => v > 0)) delete hist.w[wid];
+  await writeFile(histPath, JSON.stringify(hist));
+
   usage.updated = new Date().toISOString();
   usage.lastRun = { matches: matchesRead, players: players.size, weapons: seenInstances.size };
 
