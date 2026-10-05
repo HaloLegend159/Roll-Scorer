@@ -291,8 +291,10 @@
       colsEl.appendChild(el);
     });
 
+    renderStats();
     renderCombos(s);
     renderScore(s, cs);
+    renderTrend();
   }
 
   // "Your gun's perks / All perks" switch, shown when the weapon came from the inventory page
@@ -380,7 +382,7 @@
     $('#perk-detail').innerHTML =
       `<h4>${esc(perk.name)}</h4><p>${esc(perk.desc || 'No description.')}</p>` +
       `<p class="stat">In ${pct}% of recommended ${modeWord()} rolls for this weapon.</p>` +
-      usageLine(i) + pairLine(i, s);
+      perkStatLine(i) + usageLine(i) + pairLine(i, s);
   }
 
   // "Players: on 38% of copies" under each perk in the score breakdown
@@ -506,6 +508,195 @@
   }
 
   function basisText(e) { return e.weapons === 1 ? e.basis.replace(/s$/, '') : e.basis; }
+
+  // ---------- Weapon stats ----------
+
+  // Turn raw stat points into the number the game shows, using the weapon type's curve
+  function shownStat(points, d) {
+    const pts = d.interp;
+    if (!pts.length) return Math.max(0, Math.min(d.max || 100, points));
+    const v = Math.max(pts[0][0], Math.min(pts[pts.length - 1][0], points));
+    let end = pts.findIndex(p => p[0] > v);
+    if (end < 0) end = pts.length - 1;
+    const start = Math.max(0, end - 1);
+    const [x0, y0] = pts[start], [x1, y1] = pts[end];
+    if (x1 === x0) return y0;
+    const y = y0 + ((v - x0) / (x1 - x0)) * (y1 - y0);
+    const r = Math.round(y); // the game rounds halves to the even number
+    return Math.abs(y % 1) === 0.5 ? 2 * Math.round(y / 2) : r;
+  }
+
+  function statValues(picks) {
+    const st = state.weapon.stats;
+    const pts = { ...st.base };
+    picks.forEach(p => {
+      if (p === null) return;
+      for (const [h, v] of Object.entries(perkByIndex(p).s || {})) pts[h] = (pts[h] || 0) + v;
+    });
+    return st.list.map(d => shownStat(pts[d.h] || 0, d));
+  }
+
+  function renderStats() {
+    let el = $('#stats');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'stats';
+      el.className = 'stats';
+      $('#perk-detail').after(el);
+    }
+    const st = state.weapon.stats;
+    if (!st) { el.innerHTML = ''; return; }
+    const base = statValues(state.picks.map(() => null));
+    const now = statValues(state.picks);
+    const anyPick = state.picks.some(p => p !== null);
+    const rows = st.list.map((d, i) => {
+      const diff = now[i] - base[i];
+      const change = diff ? `<span class="chg ${diff > 0 ? 'up' : 'down'}">${diff > 0 ? '+' : '−'}${Math.abs(diff)}</span>` : '<span class="chg"></span>';
+      const bar = d.num ? '<span class="sbar none"></span>' : (() => {
+        const lo = Math.min(base[i], now[i]), hi = Math.max(base[i], now[i]);
+        return `<span class="sbar"><span class="sfill" style="width:${Math.min(100, lo)}%"></span>` +
+          (diff ? `<span class="sdelta ${diff > 0 ? 'up' : 'down'}" style="left:${Math.min(100, lo)}%;width:${Math.min(100, hi) - Math.min(100, lo)}%"></span>` : '') + '</span>';
+      })();
+      return `<li><span class="sname">${esc(d.name)}</span>${bar}<span class="sval">${now[i]}</span>${change}</li>`;
+    }).join('');
+    el.innerHTML = `<h3>Stats${anyPick ? ' with these perks' : ''}</h3><ul>${rows}</ul>` +
+      `<p class="small muted">${anyPick ? 'Changes are compared with the bare weapon.' : 'Pick perks to see how they change these.'} Masterworks, mods and conditional bonuses aren't included.</p>`;
+  }
+
+  // "Range +10, Handling −5" for the perk details box
+  function perkStatLine(i) {
+    const st = state.weapon.stats;
+    const s = perkByIndex(i).s;
+    if (!st || !s) return '';
+    // Shown as the change you'd see in-game on the bare weapon (not raw stat points)
+    const parts = st.list.filter(d => s[d.h]).map(d => {
+      const diff = shownStat((st.base[d.h] || 0) + s[d.h], d) - shownStat(st.base[d.h] || 0, d);
+      return diff ? `${esc(d.name)} ${diff > 0 ? '+' : '−'}${Math.abs(diff)}` : '';
+    }).filter(Boolean);
+    return parts.length ? `<p class="stat">Stats: ${parts.join(', ')}.</p>` : '';
+  }
+
+  // ---------- Usage over time ----------
+
+  let historyDays = null;
+  fetch('data/history.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null))
+    .then(h => { historyDays = h?.days || []; if (state.weapon) renderTrend(); })
+    .catch(() => { historyDays = []; });
+
+  const TREND = { share: '#b08f2c', act: '#3d8bd0' };
+
+  function renderTrend() {
+    let el = $('#trend');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'trend';
+      el.className = 'trend';
+      $('.actions').before(el);
+    }
+    const counts = state.weapon.history;
+    const days = historyDays;
+    if (!days) { el.innerHTML = ''; return; }
+    const n = Math.min(days.length, counts ? counts.length : 0);
+    if (n < 3) {
+      el.innerHTML = '<h3>Usage over time</h3><p class="small muted">' +
+        (days.length < 3 ? 'The site started recording daily usage recently. This chart appears after a few days of data.'
+          : 'This gun hasn\'t been seen in enough sampled matches to chart yet.') + '</p>';
+      return;
+    }
+    const D = days.slice(-n), C = counts.slice(-n);
+    // 7-day rolling share: copies of this gun out of every weapon seen
+    const share = D.map((_, i) => {
+      let c = 0, t = 0;
+      for (let k = Math.max(0, i - 6); k <= i; k++) { c += C[k]; t += D[k].total; }
+      return t ? (100 * c) / t : 0;
+    });
+    const act = D.map(d => d.act);
+    const seen = C.reduce((a, b) => a + b, 0);
+
+    const W = Math.max(280, Math.min(720, el.clientWidth || 640));
+    const L = 8, R = 56, PH = 96, GAP = 44, TOP = 22;
+    const x = i => L + (i * (W - L - R)) / (n - 1);
+    const fmtAct = v => (v >= 1e6 ? (v / 1e6).toFixed(v >= 1e7 ? 0 : 1) + 'M' : v >= 1e3 ? Math.round(v / 1e3) + 'k' : String(Math.round(v)));
+    const fmtShare = v => (v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2)) + '%';
+    const day = d => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+    function panel(vals, y0, color, title, fmt) {
+      const real = vals.filter(v => v !== null);
+      const max = Math.max(...real, 0) * 1.15 || 1;
+      const y = v => y0 + PH - (v / max) * PH;
+      let path = '', pen = false;
+      vals.forEach((v, i) => {
+        if (v === null) { pen = false; return; }
+        path += `${pen ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`;
+        pen = true;
+      });
+      const last = vals.reduce((a, v, i) => (v !== null ? i : a), -1);
+      const grid = [0.5, 1].map(f => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(max * f / 1.15)}" y2="${y(max * f / 1.15)}"/>` +
+        `<text class="tick" x="${W - R + 6}" y="${y(max * f / 1.15) + 4}">${fmt(max * f / 1.15)}</text>`).join('');
+      return `<text class="ptitle" x="${L}" y="${y0 - 8}">${title}</text>${grid}` +
+        `<line class="base" x1="${L}" x2="${W - R}" y1="${y0 + PH}" y2="${y0 + PH}"/>` +
+        `<path d="${path}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
+        (last >= 0 ? `<circle cx="${x(last)}" cy="${y(vals[last])}" r="4" fill="${color}" stroke="var(--panel)" stroke-width="2"/>` : '') +
+        `<circle class="hov" data-p="${title}" r="4" fill="${color}" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`;
+    }
+    const y1 = TOP, y2 = TOP + PH + GAP, H = y2 + PH + 22;
+    const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Usage over time for ${esc(state.weapon.name)}">` +
+      panel(share, y1, TREND.share, 'Share of all weapons seen (7-day average)', fmtShare) +
+      panel(act, y2, TREND.act, 'All of Destiny 2: activities finished per day', fmtAct) +
+      `<text class="tick" x="${L}" y="${H - 4}">${day(D[0].d)}</text><text class="tick" x="${W - R}" y="${H - 4}" text-anchor="end">${day(D[n - 1].d)}</text>` +
+      `<line class="cross" y1="${y1}" y2="${y2 + PH}" visibility="hidden"/>` +
+      `<rect class="hit" x="0" y="0" width="${W}" height="${H}" fill="transparent"/></svg>`;
+
+    // Plain-words takeaway: is a change the gun, or just the player count?
+    let takeaway = '';
+    const firstAct = act.filter(v => v !== null).slice(0, 3), lastAct = act.filter(v => v !== null).slice(-3);
+    const avg = a => a.reduce((p, c) => p + c, 0) / a.length;
+    if (n >= 8) {
+      const s0 = share[Math.min(6, n - 2)], s1 = share[n - 1];
+      const sChg = s0 ? Math.round((100 * (s1 - s0)) / s0) : 0;
+      const aChg = firstAct.length && lastAct.length && avg(firstAct) ? Math.round((100 * (avg(lastAct) - avg(firstAct))) / avg(firstAct)) : null;
+      const aText = aChg === null ? '' : ` Overall activity ${aChg > 2 ? `rose ${aChg}%` : aChg < -2 ? `fell ${-aChg}%` : 'stayed about level'} over the same days.`;
+      if (sChg <= -15) takeaway = `This gun's share fell ${-sChg}%, so players are picking it less. That's about the gun, not the player count.${aText}`;
+      else if (sChg >= 15) takeaway = `This gun's share grew ${sChg}%, so players are picking it more.${aText}`;
+      else if (aChg !== null && aChg <= -15) takeaway = `This gun's share held steady while overall activity fell ${-aChg}%. Fewer sightings here would just mean fewer players.`;
+      else takeaway = `This gun's share has held steady.${aText}`;
+    }
+    const table = `<details><summary>Show as table</summary><table><thead><tr><th>Day</th><th>Copies seen</th><th>Share (7-day)</th><th>Activities per day</th></tr></thead><tbody>${
+      D.map((d, i) => `<tr><td>${day(d.d)}</td><td>${C[i]}</td><td>${fmtShare(share[i])}</td><td>${act[i] === null ? '–' : fmtAct(act[i])}</td></tr>`).join('')}</tbody></table></details>`;
+
+    el.innerHTML = `<h3>Usage over time</h3>` +
+      (takeaway ? `<p class="takeaway">${takeaway}</p>` : '') +
+      `<div class="chart">${svg}<div class="ttip" hidden></div></div>` +
+      `<p class="small muted">Share is this gun's copies out of every weapon seen in sampled matches, so it doesn't drop just because fewer people are playing. ` +
+      `${seen < 30 ? `Only ${seen} copies seen so far, so treat this as rough. ` : ''}The lower chart is an estimate of the whole game's activity, from Bungie's match counter.</p>` + table;
+
+    // Hover: crosshair through both panels plus one tooltip with every value
+    const box = el.querySelector('.chart'), tipEl = el.querySelector('.ttip'), cross = el.querySelector('.cross');
+    const hov = [...el.querySelectorAll('.hov')];
+    const yFor = (vals, y0) => { const m = Math.max(...vals.filter(v => v !== null), 0) * 1.15 || 1; return v => y0 + PH - (v / m) * PH; };
+    const ys = [yFor(share, y1), yFor(act, y2)];
+    const move = ev => {
+      const r = box.getBoundingClientRect();
+      const px = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+      const i = Math.max(0, Math.min(n - 1, Math.round(((px - L) / (W - L - R)) * (n - 1))));
+      cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+      [share, act].forEach((vals, k) => {
+        if (vals[i] === null) { hov[k].setAttribute('visibility', 'hidden'); return; }
+        hov[k].setAttribute('cx', x(i)); hov[k].setAttribute('cy', ys[k](vals[i])); hov[k].setAttribute('visibility', 'visible');
+      });
+      tipEl.innerHTML = `<strong>${day(D[i].d)}</strong><br>Share: ${fmtShare(share[i])}<br>Copies seen that day: ${C[i]}<br>Activities: ${act[i] === null ? 'no estimate' : fmtAct(act[i])}`;
+      tipEl.hidden = false;
+      tipEl.style.left = Math.min(W - 170, Math.max(0, x(i) + 10)) + 'px';
+    };
+    const leave = () => { tipEl.hidden = true; cross.setAttribute('visibility', 'hidden'); hov.forEach(h => h.setAttribute('visibility', 'hidden')); };
+    const hit = el.querySelector('.hit');
+    hit.addEventListener('mousemove', move);
+    hit.addEventListener('touchstart', move, { passive: true });
+    hit.addEventListener('touchmove', move, { passive: true });
+    hit.addEventListener('mouseleave', leave);
+  }
+  let trendResize;
+  window.addEventListener('resize', () => { clearTimeout(trendResize); trendResize = setTimeout(() => state.weapon && renderTrend(), 150); });
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

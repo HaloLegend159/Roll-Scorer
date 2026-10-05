@@ -270,7 +270,45 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .inv-empty { color: var(--muted); padding: 1rem 0; }
 .caveat-line { font-size: 0.85rem; margin-top: 1rem; }
 
+/* Weapon stats */
+.stats { margin-top: 1rem; max-width: 70ch; }
+.stats h3, .trend h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1.1rem; margin: 0 0 0.5rem; }
+.stats ul { list-style: none; margin: 0 0 0.4rem; padding: 0; display: grid; gap: 0.3rem; }
+.stats li { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 2.5rem 2.6rem; gap: 0.6rem; align-items: center; font-size: 0.9rem; }
+.stats .sname { color: var(--muted); }
+.stats .sbar { position: relative; height: 8px; background: var(--perk-deep); }
+.stats .sbar.none { background: none; }
+.stats .sfill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--text); opacity: 0.85; }
+.stats .sdelta { position: absolute; top: 0; bottom: 0; }
+.stats .sdelta.up { background: #6fbf73; }
+.stats .sdelta.down { background: var(--bad); }
+.stats .sval { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.stats .chg { font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+.stats .chg.up { color: #8fd193; }
+.stats .chg.down { color: #e08a7b; }
+
+/* Usage over time */
+.trend { margin-top: 1.5rem; max-width: 720px; }
+.trend .takeaway { margin: 0 0 0.75rem; }
+.trend .chart { position: relative; background: var(--panel); border: 1px solid var(--line); padding: 0.5rem 0.5rem 0.25rem; overflow: hidden; }
+.trend svg { display: block; max-width: 100%; }
+.trend .ptitle { fill: var(--text); font-size: 12px; font-weight: 600; }
+.trend .tick { fill: var(--muted); font-size: 11px; }
+.trend .g { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+.trend .base, .trend .cross { stroke: var(--line); stroke-width: 1; }
+.trend .cross { stroke: var(--muted); }
+.trend .ttip {
+  position: absolute; top: 0.5rem; pointer-events: none; width: 170px;
+  background: var(--bg); border: 1px solid var(--line); padding: 0.4rem 0.6rem; font-size: 0.8rem; line-height: 1.4;
+}
+.trend details { margin-top: 0.5rem; font-size: 0.85rem; }
+.trend summary { cursor: pointer; color: var(--muted); }
+.trend table { border-collapse: collapse; margin-top: 0.5rem; width: 100%; }
+.trend th, .trend td { text-align: right; padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.trend th:first-child, .trend td:first-child { text-align: left; }
+
 @media (max-width: 860px) {
+  .stats li { grid-template-columns: 7rem minmax(0, 1fr) 2.2rem 2.4rem; gap: 0.4rem; }
   .inv-row a { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 0.6rem; }
   .inv-row img { width: 44px; height: 44px; }
   .inv-score .num { font-size: 2rem; }

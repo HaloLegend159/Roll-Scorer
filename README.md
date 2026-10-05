@@ -37,6 +37,14 @@ hand with **force** ticked.
   Bungie's public data (`scripts/collect-xur.mjs`, plus an extra run Fridays after he arrives).
   If Bungie doesn't share the exact rolls publicly, signed-in players still see their own.
 
+## Stats and usage over time
+
+- **Stats**: the Score a roll page shows each weapon's stats and how the picked perks change them,
+  worked out from Bungie's game data. Masterworks, mods and conditional bonuses aren't included.
+- **Usage over time**: `collect-usage.mjs` also keeps a day-by-day tally in `data/usage/history.json`
+  (120 days). The chart shows a gun's share of all weapons seen next to an estimate of the whole
+  game's activity, so a drop in players isn't mistaken for a drop in the gun's popularity.
+
 ## How the score works
 
 For the chosen activity (All / PvE / PvP):
