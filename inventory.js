@@ -134,7 +134,7 @@
       : m.displayName;
 
     loading('Loading your inventory…');
-    const p = await api(`/Destiny2/${m.membershipType}/Profile/${m.membershipId}/?components=102,200,201,205,300,305,310`);
+    const p = await api(`/Destiny2/${m.membershipType}/Profile/${m.membershipId}/?components=102,200,201,205,300,305,309,310`);
 
     const raw = [];
     const chars = p.characters?.data || {};
@@ -201,12 +201,20 @@
     });
     // Perks can be switched through the API on normal drops with a choice in some column.
     // Crafted guns are reshaped at the Enclave instead, and Postmaster items must be picked up first.
+    // Kills on this copy, read from its kill tracker (the plug slotted on the gun that carries one counter).
+    // Guns with no tracker switched on have no count.
+    let kills = null;
+    const perPlug = p.itemComponents.plugObjectives?.data?.[iid]?.objectivesPerPlug || {};
+    for (const s of live) {
+      const obj = s.plugHash ? perPlug[s.plugHash] : null;
+      if (obj && obj.length === 1 && Number.isFinite(obj[0].progress)) kills = Math.max(kills ?? 0, obj[0].progress);
+    }
     const canApply = !crafted && !postmaster && cid && options.some(o => o.length > 1);
     const applyInfo = canApply ? { mt: state.mt, ch: cid, plugs, slotted: [...slotted] } : null;
     // Item IDs count upward as items are created, so a bigger ID means acquired more recently
     let order = 0n;
     try { order = BigInt(iid); } catch {}
-    return { iid, id, ctx, where, equipped, crafted, options, slotted, scores: {}, postmaster: !!postmaster, order, applyInfo };
+    return { iid, id, ctx, where, equipped, crafted, options, slotted, scores: {}, postmaster: !!postmaster, order, applyInfo, kills };
   }
 
   // Best possible score from this copy's perks, plus the score of what's slotted now
@@ -295,6 +303,7 @@
       'score-asc': (a, b) => (sc(a) ?? 999) - (sc(b) ?? 999) || byName(a, b),
       newest: (a, b) => (a.order === b.order ? 0 : a.order > b.order ? -1 : 1),
       oldest: (a, b) => (a.order === b.order ? 0 : a.order < b.order ? -1 : 1),
+      kills: (a, b) => (b.kills ?? -1) - (a.kills ?? -1) || byName(a, b),
       name: byName,
       type: (a, b) => a.ctx.w.type.localeCompare(b.ctx.w.type) || byName(a, b),
     }[sort]);
@@ -343,6 +352,7 @@
     if (item.postmaster) badges.push('<span class="badge post" title="Sitting at the Postmaster. Pick it up or it can be lost when the Postmaster fills up.">Postmaster</span>');
     if (w.estimated) badges.push('<span class="badge">Estimated</span>');
     if (item.crafted) badges.push('<span class="badge">Crafted</span>');
+    if (item.kills !== null) badges.push(`<span class="badge" title="From this copy's kill tracker">${item.kills.toLocaleString()} kills</span>`);
     else if (w.craftable) badges.push('<span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>');
 
     let scoreHtml;
