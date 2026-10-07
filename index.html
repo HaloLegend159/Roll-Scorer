@@ -9,7 +9,7 @@
   <link rel="icon" href="icon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon-180.png">
-  <meta name="theme-color" content="#0a1220">
+  <meta name="theme-color" content="#0e0f11">
   <!-- Link preview for Discord, Reddit, iMessage and so on -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="D2 Roll Check">
@@ -23,7 +23,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Saira:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script>
     // Bungie sign-in returned to this page instead of the inventory page: pass it along
@@ -33,7 +33,7 @@
 <body>
   <header class="top">
     <div class="bar">
-      <h1 class="brand"><img src="icon.svg" alt="" width="36" height="36">D2 Roll Check</h1>
+      <h1 class="brand"><img src="icon.svg" alt="" width="26" height="26">D2 Roll Check</h1>
       <nav class="tabs" aria-label="Pages">
         <a href="./" aria-current="page">Score a roll</a>
         <a href="inventory.html">My inventory</a>
@@ -45,16 +45,39 @@
   </header>
 
   <main id="app">
+    <section id="empty" class="hero">
+      <h2>Is this roll worth keeping?</h2>
+      <p>Pick the perks on a Destiny 2 weapon and get a score out of 100, based on the rolls the community recommends and what players actually use.</p>
+    </section>
+
     <div class="finder">
       <div class="search" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="results">
-        <label for="q">Search weapons</label>
+        <label for="q" class="sr-only">Search weapons</label>
         <input id="q" type="search" placeholder="Search a weapon, like Fatebringer or Rose" autocomplete="off" aria-autocomplete="list" aria-controls="results">
         <ul id="results" role="listbox" hidden></ul>
       </div>
+      <p id="status">Loading weapons…</p>
     </div>
 
-    <section id="empty" class="empty">
-      <p id="status">Loading weapons…</p>
+    <section class="home">
+      <div id="popular" hidden>
+        <h3>Most used right now</h3>
+        <ol id="pop-list" class="pop"></ol>
+      </div>
+
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li><b>Find the weapon</b><span>Search any of the weapons in the game that can drop with random perks.</span></li>
+        <li><b>Pick its perks</b><span>Tap one perk in each column, the same way they appear on the gun in game.</span></li>
+        <li><b>Read the score</b><span>See how close it is to a recommended roll, what to chase instead, and why the roll is rated.</span></li>
+      </ol>
+
+      <h3>More tools</h3>
+      <ul class="more">
+        <li><a href="inventory.html"><b>My inventory</b><span>Sign in with Bungie to score every weapon you own at once.</span></a></li>
+        <li><a href="xur.html"><b>Xûr</b><span>The weapons Xûr is selling this week, scored.</span></a></li>
+        <li><a href="compare.html"><b>Compare</b><span>Put up to three guns side by side and see usage rankings by type.</span></a></li>
+      </ul>
     </section>
 
     <section id="weapon" hidden>

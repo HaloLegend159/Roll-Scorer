@@ -22,7 +22,8 @@
       const res = await fetch('data/index.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error(res.status);
       state.index = await res.json();
-      $('#status').textContent = `${state.index.length} weapons loaded. Search for one above to start.`;
+      $('#status').textContent = `${state.index.length} weapons to choose from.`;
+      renderHome();
     } catch {
       $('#status').textContent =
         'No weapon data yet. Open the repo\'s Actions tab, run "Update roll data", then reload this page.';
@@ -34,6 +35,18 @@
         (m.usageLoadouts ? ` · ${m.usageLoadouts.toLocaleString()} weapons seen in real matches` : '');
     }).catch(() => {});
     readHash();
+  }
+
+  // First page: the guns seen most in sampled matches, as shortcuts
+  function renderHome() {
+    const top = state.index.filter(w => w.u && w.u[0] > 0).sort((x, y) => y.u[0] - x.u[0]).slice(0, 12);
+    if (!top.length) return;
+    $('#pop-list').innerHTML = top.map((w, i) =>
+      `<li><a href="#${encodeURIComponent(w.id)}">` +
+      (w.icon ? `<img src="${BUNGIE + w.icon}" alt="" loading="lazy" width="44" height="44">` : '<span></span>') +
+      `<span><span class="pn">${esc(w.name)}</span><br><span class="pt">${esc(w.type)}</span></span>` +
+      `<span class="pr">#${i + 1}</span></a></li>`).join('');
+    $('#popular').hidden = false;
   }
 
   async function loadWeapon(id, picksFromUrl, availFromUrl) {
