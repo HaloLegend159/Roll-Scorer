@@ -299,6 +299,8 @@
       colsEl.appendChild(el);
     });
 
+    // Rarity sets the color of the band behind the gun's name
+    $('#weapon').dataset.tier = String(w.tier || '').toLowerCase();
     // Type line: tier, type, where the gun ranks for this activity, craftable
     $('#w-type').innerHTML = esc([w.tier, w.type].filter(Boolean).join(' ')) + gunRankHtml() +
       (w.craftable ? ' <span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>' : '');

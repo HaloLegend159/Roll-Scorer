@@ -9,7 +9,7 @@
   <link rel="icon" href="icon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon-180.png">
-  <meta name="theme-color" content="#1b2130">
+  <meta name="theme-color" content="#1c1d20">
   <!-- Link preview for Discord, Reddit, iMessage and so on -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="D2 Roll Check">
@@ -23,7 +23,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Saira:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script>
     // Bungie sign-in returned to this page instead of the inventory page: pass it along
@@ -32,46 +32,46 @@
 </head>
 <body>
   <header class="top">
-    <div class="brand-row">
+    <div class="bar">
       <h1 class="brand">D2 Roll Check</h1>
-      <!-- Tip jar: replace YOUR-NAME with your Ko-fi name and the button appears -->
-      <a id="tip" class="tip" href="https://ko-fi.com/halolegend159" target="_blank" rel="noopener" hidden>☕ Tip jar</a>
-    </div>
-    <p class="tagline">Pick the perks on your drop. See how it stacks up against the rolls the community chases.</p>
-    <nav class="tabs" aria-label="Pages">
-      <a href="./" aria-current="page">Score a roll</a>
-      <a href="inventory.html">My inventory</a>
-      <a href="xur.html">Xûr</a>
-      <a href="compare.html">Compare</a>
-    </nav>
-    <div class="search" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="results">
-      <label for="q" class="sr-only">Search weapons</label>
-      <input id="q" type="search" placeholder="Search a weapon, like Fatebringer or Rose" autocomplete="off" aria-autocomplete="list" aria-controls="results">
-      <ul id="results" role="listbox" hidden></ul>
+      <nav class="tabs" aria-label="Pages">
+        <a href="./" aria-current="page">Score a roll</a>
+        <a href="inventory.html">My inventory</a>
+        <a href="xur.html">Xûr</a>
+        <a href="compare.html">Compare</a>
+      </nav>
+      <a id="tip" class="tip" href="https://ko-fi.com/halolegend159" target="_blank" rel="noopener" hidden>Tip jar</a>
     </div>
   </header>
 
   <main id="app">
+    <div class="finder">
+      <div class="search" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="results">
+        <label for="q">Search weapons</label>
+        <input id="q" type="search" placeholder="Search a weapon, like Fatebringer or Rose" autocomplete="off" aria-autocomplete="list" aria-controls="results">
+        <ul id="results" role="listbox" hidden></ul>
+      </div>
+    </div>
+
     <section id="empty" class="empty">
       <p id="status">Loading weapons…</p>
     </section>
 
     <section id="weapon" hidden>
-      <div class="weapon-head">
-        <img id="w-icon" alt="" width="72" height="72">
-        <div>
-          <h2 id="w-name"></h2>
-          <p id="w-type" class="muted"></p>
-        </div>
-        <div class="modes" role="radiogroup" aria-label="Activity">
-          <button role="radio" data-mode="all" aria-checked="true">All</button>
-          <button role="radio" data-mode="pve" aria-checked="false">PvE</button>
-          <button role="radio" data-mode="pvp" aria-checked="false">PvP</button>
-        </div>
-      </div>
-
       <div class="layout">
         <div class="perks-area">
+          <div class="weapon-head">
+            <img id="w-icon" alt="" width="72" height="72">
+            <div>
+              <h2 id="w-name"></h2>
+              <p id="w-type" class="muted"></p>
+            </div>
+            <div class="modes" role="radiogroup" aria-label="Activity">
+              <button role="radio" data-mode="all" aria-checked="true">All</button>
+              <button role="radio" data-mode="pve" aria-checked="false">PvE</button>
+              <button role="radio" data-mode="pvp" aria-checked="false">PvP</button>
+            </div>
+          </div>
           <div id="columns" class="columns"></div>
           <div id="perk-detail" class="perk-detail" aria-live="polite">
             <p class="muted">Tap one perk in each column. A solid gold dot marks the most recommended perk in a column and a gold ring marks a strong alternative. After you pick a perk, the dots in the other columns update to show what pairs well with it.</p>
