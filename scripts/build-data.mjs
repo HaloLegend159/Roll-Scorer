@@ -41,6 +41,8 @@ async function loadManifest() {
       statGroups: JSON.parse(await readFile(path.join(dir, 'statgroups.json'), 'utf8').catch(() => '{}')),
       collectibles: JSON.parse(await readFile(path.join(dir, 'collectibles.json'), 'utf8').catch(() => '{}')),
       activities: JSON.parse(await readFile(path.join(dir, 'activities.json'), 'utf8').catch(() => '{}')),
+      itemSets: JSON.parse(await readFile(path.join(dir, 'itemsets.json'), 'utf8').catch(() => '{}')),
+      sandboxPerks: JSON.parse(await readFile(path.join(dir, 'sandboxperks.json'), 'utf8').catch(() => '{}')),
     };
   }
   const headers = API_KEY ? { 'X-API-Key': API_KEY } : {};
@@ -50,7 +52,7 @@ async function loadManifest() {
   }
   const paths = manifest.Response.jsonWorldComponentContentPaths.en;
   console.log('Downloading manifest', manifest.Response.version);
-  const [items, plugSets, vendors, statDefs, statGroups, collectibles, activities] = await Promise.all([
+  const [items, plugSets, vendors, statDefs, statGroups, collectibles, activities, itemSets, sandboxPerks] = await Promise.all([
     getJson(BUNGIE + paths.DestinyInventoryItemDefinition),
     getJson(BUNGIE + paths.DestinyPlugSetDefinition),
     getJson(BUNGIE + paths.DestinyVendorDefinition).catch(() => ({})),
@@ -58,8 +60,10 @@ async function loadManifest() {
     getJson(BUNGIE + paths.DestinyStatGroupDefinition).catch(() => ({})),
     getJson(BUNGIE + paths.DestinyCollectibleDefinition).catch(() => ({})),
     getJson(BUNGIE + paths.DestinyActivityDefinition).catch(() => ({})),
+    (paths.DestinyEquipableItemSetDefinition ? getJson(BUNGIE + paths.DestinyEquipableItemSetDefinition) : Promise.resolve({})).catch(() => ({})),
+    getJson(BUNGIE + paths.DestinySandboxPerkDefinition).catch(() => ({})),
   ]);
-  return { version: manifest.Response.version, items, plugSets, vendors, statDefs, statGroups, collectibles, activities };
+  return { version: manifest.Response.version, items, plugSets, vendors, statDefs, statGroups, collectibles, activities, itemSets, sandboxPerks };
 }
 
 // ---------- Wish list ----------
@@ -229,8 +233,51 @@ function slug(s) {
 
 // ---------- Main ----------
 
+// ---------- Armor ----------
+
+// Helmet, arms, chest, legs, class item
+const ARMOR_BUCKETS = [3448274439, 3551918588, 14239492, 20886954, 1585787867];
+// The six armor stats, in the order the game lists them (Bungie kept the old stat IDs when it renamed them)
+const ARMOR_STATS = [2996146975, 392767087, 1943323491, 1735777505, 144602215, 4244567218];
+const ARCHETYPE_NAMES = /^(brawler|bulwark|grenadier|gunner|paragon|specialist)$/i;
+
+function buildArmor({ items, statDefs, itemSets, sandboxPerks }) {
+  const stats = ARMOR_STATS.map(h => ({ h, n: statDefs?.[h]?.displayProperties?.name || String(h) }));
+  const out = { stats, items: {}, sets: {}, arch: {} };
+  const usedSets = new Set();
+  for (const [hash, it] of Object.entries(items)) {
+    // Archetype plugs (Grenadier, Bulwark and so on) that sit in a socket on Armor 3.0 pieces
+    const pc = it?.plug?.plugCategoryIdentifier || '';
+    const name = it?.displayProperties?.name || '';
+    if (it?.plug && (/archetype/i.test(pc) || (ARCHETYPE_NAMES.test(name) && /armor|archetype/i.test(pc + ' ' + (it.itemTypeDisplayName || ''))))) {
+      out.arch[hash] = name;
+      continue;
+    }
+    if (it?.itemType !== 2 || it.redacted || !name) continue;
+    const slot = ARMOR_BUCKETS.indexOf(it.inventory?.bucketTypeHash);
+    if (slot < 0) continue;
+    const set = it.equippingBlock?.equipableItemSetHash || 0;
+    if (set) usedSets.add(set);
+    // name, class (0 Titan, 1 Hunter, 2 Warlock, 3 any), slot, set, icon, exotic
+    out.items[hash] = [name, it.classType ?? 3, slot, set, it.displayProperties.icon || '', it.inventory?.tierType === 6 ? 1 : 0];
+  }
+  for (const s of usedSets) {
+    const d = itemSets?.[s];
+    if (!d) continue;
+    out.sets[s] = {
+      n: d.displayProperties?.name || 'Unnamed set',
+      perks: (d.setPerks || []).map(p => {
+        const sp = sandboxPerks?.[p.sandboxPerkHash]?.displayProperties || {};
+        return [p.requiredSetCount, sp.name || '', sp.description || ''];
+      }),
+    };
+  }
+  console.log(`Armor: ${Object.keys(out.items).length} pieces, ${Object.keys(out.sets).length} sets, ${Object.keys(out.arch).length} archetype plugs`);
+  return out;
+}
+
 async function main() {
-  const [{ version, items, plugSets, vendors, statDefs, statGroups, collectibles, activities }, wishText] = await Promise.all([
+  const [{ version, items, plugSets, vendors, statDefs, statGroups, collectibles, activities, itemSets, sandboxPerks }, wishText] = await Promise.all([
     loadManifest(),
     process.env.LOCAL_WISHLIST
       ? readFile(process.env.LOCAL_WISHLIST, 'utf8')
@@ -544,6 +591,13 @@ async function main() {
   await writeFile(path.join(OUT, 'index.json'), JSON.stringify(index));
   await writeFile(path.join(OUT, 'history.json'), JSON.stringify({ days: historyDays }));
   await writeFile(path.join(OUT, 'lookup.json'), JSON.stringify(lookup));
+  // Armor lookup for the Armor page. Its own try, so a problem here never stops the weapon data.
+  try {
+    await writeFile(path.join(OUT, 'armor.json'), JSON.stringify(buildArmor({ items, statDefs, itemSets, sandboxPerks })));
+  } catch (e) {
+    console.log('Skipping armor data:', e.message);
+  }
+
   await writeFile(path.join(OUT, 'meta.json'), JSON.stringify({
     manifestVersion: version,
     builtAt: new Date().toISOString(),
