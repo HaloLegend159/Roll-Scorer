@@ -451,3 +451,24 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
   .sources dl { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
   .sources dd { margin-bottom: 0.6rem; }
 }
+
+/* Plain-text overview at the end of each weapon page, and the guide */
+.about { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--line); max-width: 78ch; }
+.about h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.5rem; }
+.about h2 { font-size: 1.1rem; font-weight: 600; margin: 2rem 0 0.6rem; }
+.about p, .about li { color: var(--soft); }
+.about ul { padding-left: 1.1rem; }
+.about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 2.5rem; }
+.about-roll { color: var(--text) !important; font-weight: 500; }
+.about dl { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: 0.35rem 1rem; margin: 0.75rem 0 0; }
+.about dt { color: var(--muted); font-size: 0.9rem; }
+.about dd { margin: 0; color: var(--soft); }
+.about blockquote { margin: 0 0 0.75rem; padding: 0.75rem 1rem; background: var(--panel); border-left: 3px solid var(--line-strong); border-radius: 0 6px 6px 0; }
+.about blockquote p { margin: 0; font-size: 0.95rem; }
+.about-links { list-style: none; padding: 0 !important; display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; }
+.about-links a { color: var(--soft); text-decoration-color: var(--line-strong); }
+.about-links a:hover { color: var(--text); }
+.about.guide { margin-top: 0; padding-top: 1.5rem; border-top: 0; }
+.about.guide h1 { font-size: clamp(1.9rem, 4vw, 2.4rem); letter-spacing: -0.02em; }
+.about dl { max-width: 60ch; }
+.about.guide dl { grid-template-columns: 7.5rem minmax(0, 1fr); }

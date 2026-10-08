@@ -19,7 +19,7 @@
 
   async function init() {
     try {
-      const res = await fetch('data/index.json', { cache: 'no-cache' });
+      const res = await fetch('/data/index.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error(res.status);
       state.index = await res.json();
       $('#status').textContent = `${state.index.length} weapons to choose from.`;
@@ -29,7 +29,7 @@
         'No weapon data yet. Open the repo\'s Actions tab, run "Update roll data", then reload this page.';
       return;
     }
-    fetch('data/meta.json').then(r => r.json()).then(m => {
+    fetch('/data/meta.json').then(r => r.json()).then(m => {
       const d = new Date(m.builtAt);
       $('#meta').textContent = `Data updated ${d.toLocaleDateString()} · ${m.wishlistRolls.toLocaleString()} community rolls` +
         (m.usageLoadouts ? ` · ${m.usageLoadouts.toLocaleString()} weapons seen in real matches` : '');
@@ -42,7 +42,7 @@
     const top = state.index.filter(w => w.u && w.u[0] > 0).sort((x, y) => y.u[0] - x.u[0]).slice(0, 12);
     if (!top.length) return;
     $('#pop-list').innerHTML = top.map((w, i) =>
-      `<li><a href="#/${encodeURIComponent(w.id)}/">` +
+      `<li><a href="/w/${encodeURIComponent(w.id)}/">` +
       (w.icon ? `<img src="${BUNGIE + w.icon}" alt="" loading="lazy" width="44" height="44">` : '<span></span>') +
       `<span><span class="pn">${esc(w.name)}</span><br><span class="pt">${esc(w.type)}</span></span>` +
       `<span class="pr">#${i + 1}</span></a></li>`).join('');
@@ -50,7 +50,7 @@
   }
 
   async function loadWeapon(id, picksFromUrl, availFromUrl) {
-    const res = await fetch(`data/w/${encodeURIComponent(id)}.json`);
+    const res = await fetch(`/data/w/${encodeURIComponent(id)}.json`);
     if (!res.ok) { $('#status').textContent = `Couldn't load that weapon (${res.status}).`; return; }
     const w = await res.json();
     state.weapon = w;
@@ -248,7 +248,7 @@
     const r = RollScore.rank(state.index, state.weapon.id, ['all', 'pve', 'pvp'].indexOf(state.mode));
     if (!r || r.rank === null) return '';
     const plural = /s$/.test(state.weapon.type) ? state.weapon.type : state.weapon.type + 's';
-    return ` · <a class="gun-rank" href="compare.html#${encodeURIComponent(state.weapon.id)}" title="Based on copies seen in sampled ${modeWord() || 'recent'} matches. Popular isn't always best.">#${r.rank} of ${r.of} ${esc(plural)} by usage</a>`;
+    return ` · <a class="gun-rank" href="/compare.html#${encodeURIComponent(state.weapon.id)}" title="Based on copies seen in sampled ${modeWord() || 'recent'} matches. Popular isn't always best.">#${r.rank} of ${r.of} ${esc(plural)} by usage</a>`;
   }
 
   function grade(n) {
@@ -666,7 +666,7 @@
   // ---------- Usage over time ----------
 
   let historyDays = null;
-  fetch('data/history.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null))
+  fetch('/data/history.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null))
     .then(h => { historyDays = h?.days || []; if (state.weapon) renderTrend(); })
     .catch(() => { historyDays = []; });
 
@@ -773,8 +773,9 @@
   }
 
   function readHash() {
-    const [, id, mode, p, a, iid] = location.hash.split('/');
+    let [, id, mode, p, a, iid] = location.hash.split('/');
     state.iid = /^\d+$/.test(iid || '') ? iid : null;
+    if (!id && window.RS_START) id = window.RS_START; // a weapon's own page, /w/<id>/
     if (!id) return;
     if (['all', 'pve', 'pvp'].includes(mode)) state.mode = mode;
     const picks = (p || '').split('-').map(x => (x === '_' || x === '' ? null : Number(x)));
