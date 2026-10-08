@@ -40,6 +40,7 @@ async function loadManifest() {
       statDefs: JSON.parse(await readFile(path.join(dir, 'stats.json'), 'utf8').catch(() => '{}')),
       statGroups: JSON.parse(await readFile(path.join(dir, 'statgroups.json'), 'utf8').catch(() => '{}')),
       collectibles: JSON.parse(await readFile(path.join(dir, 'collectibles.json'), 'utf8').catch(() => '{}')),
+      activities: JSON.parse(await readFile(path.join(dir, 'activities.json'), 'utf8').catch(() => '{}')),
     };
   }
   const headers = API_KEY ? { 'X-API-Key': API_KEY } : {};
@@ -49,15 +50,16 @@ async function loadManifest() {
   }
   const paths = manifest.Response.jsonWorldComponentContentPaths.en;
   console.log('Downloading manifest', manifest.Response.version);
-  const [items, plugSets, vendors, statDefs, statGroups, collectibles] = await Promise.all([
+  const [items, plugSets, vendors, statDefs, statGroups, collectibles, activities] = await Promise.all([
     getJson(BUNGIE + paths.DestinyInventoryItemDefinition),
     getJson(BUNGIE + paths.DestinyPlugSetDefinition),
     getJson(BUNGIE + paths.DestinyVendorDefinition).catch(() => ({})),
     getJson(BUNGIE + paths.DestinyStatDefinition).catch(() => ({})),
     getJson(BUNGIE + paths.DestinyStatGroupDefinition).catch(() => ({})),
     getJson(BUNGIE + paths.DestinyCollectibleDefinition).catch(() => ({})),
+    getJson(BUNGIE + paths.DestinyActivityDefinition).catch(() => ({})),
   ]);
-  return { version: manifest.Response.version, items, plugSets, vendors, statDefs, statGroups, collectibles };
+  return { version: manifest.Response.version, items, plugSets, vendors, statDefs, statGroups, collectibles, activities };
 }
 
 // ---------- Wish list ----------
@@ -228,7 +230,7 @@ function slug(s) {
 // ---------- Main ----------
 
 async function main() {
-  const [{ version, items, plugSets, vendors, statDefs, statGroups, collectibles }, wishText] = await Promise.all([
+  const [{ version, items, plugSets, vendors, statDefs, statGroups, collectibles, activities }, wishText] = await Promise.all([
     loadManifest(),
     process.env.LOCAL_WISHLIST
       ? readFile(process.env.LOCAL_WISHLIST, 'utf8')
@@ -262,6 +264,7 @@ async function main() {
         craftable: false,
         sources: new Set(),
         vendors: new Set(),
+        activities: new Set(),
       };
       groups.set(name, g);
     } else {
@@ -276,6 +279,20 @@ async function main() {
     hashToGroup.set(Number(hash), g);
   }
   console.log(`Found ${groups.size} random-roll weapons`);
+
+  // Activities whose reward preview in the game lists the gun (Bungie keeps these current as loot pools change)
+  let rewardLinks = 0;
+  for (const a of Object.values(activities || {})) {
+    const aname = a?.displayProperties?.name?.trim();
+    if (!aname || a.redacted) continue;
+    for (const r of a.rewards || []) {
+      for (const ri of r.rewardItems || []) {
+        const g = hashToGroup.get(ri.itemHash);
+        if (g && !g.activities.has(aname)) { g.activities.add(aname); rewardLinks++; }
+      }
+    }
+  }
+  console.log(`Activity reward previews: ${rewardLinks} weapon links`);
 
   // Vendors that sell or reward each gun. Xûr is left out: his list is every gun he might ever stock.
   for (const v of Object.values(vendors || {})) {
@@ -503,6 +520,8 @@ async function main() {
       notes: g.notes,
       craftable: g.craftable,
       sources: [...g.sources].slice(0, 8),
+      activities: [...g.activities].slice(0, 8),
+      hash: g.hashes[g.hashes.length - 1],
       vendors: [...g.vendors].slice(0, 8),
       frame: g.frame || '',
       stats: g.stats || null,
