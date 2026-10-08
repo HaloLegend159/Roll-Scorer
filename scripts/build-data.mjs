@@ -39,6 +39,7 @@ async function loadManifest() {
       vendors: JSON.parse(await readFile(path.join(dir, 'vendors.json'), 'utf8').catch(() => '{}')),
       statDefs: JSON.parse(await readFile(path.join(dir, 'stats.json'), 'utf8').catch(() => '{}')),
       statGroups: JSON.parse(await readFile(path.join(dir, 'statgroups.json'), 'utf8').catch(() => '{}')),
+      collectibles: JSON.parse(await readFile(path.join(dir, 'collectibles.json'), 'utf8').catch(() => '{}')),
     };
   }
   const headers = API_KEY ? { 'X-API-Key': API_KEY } : {};
@@ -48,14 +49,15 @@ async function loadManifest() {
   }
   const paths = manifest.Response.jsonWorldComponentContentPaths.en;
   console.log('Downloading manifest', manifest.Response.version);
-  const [items, plugSets, vendors, statDefs, statGroups] = await Promise.all([
+  const [items, plugSets, vendors, statDefs, statGroups, collectibles] = await Promise.all([
     getJson(BUNGIE + paths.DestinyInventoryItemDefinition),
     getJson(BUNGIE + paths.DestinyPlugSetDefinition),
     getJson(BUNGIE + paths.DestinyVendorDefinition).catch(() => ({})),
     getJson(BUNGIE + paths.DestinyStatDefinition).catch(() => ({})),
     getJson(BUNGIE + paths.DestinyStatGroupDefinition).catch(() => ({})),
+    getJson(BUNGIE + paths.DestinyCollectibleDefinition).catch(() => ({})),
   ]);
-  return { version: manifest.Response.version, items, plugSets, vendors, statDefs, statGroups };
+  return { version: manifest.Response.version, items, plugSets, vendors, statDefs, statGroups, collectibles };
 }
 
 // ---------- Wish list ----------
@@ -226,7 +228,7 @@ function slug(s) {
 // ---------- Main ----------
 
 async function main() {
-  const [{ version, items, plugSets, vendors, statDefs, statGroups }, wishText] = await Promise.all([
+  const [{ version, items, plugSets, vendors, statDefs, statGroups, collectibles }, wishText] = await Promise.all([
     loadManifest(),
     process.env.LOCAL_WISHLIST
       ? readFile(process.env.LOCAL_WISHLIST, 'utf8')
@@ -258,6 +260,8 @@ async function main() {
         columns: cols,
         sockets: {},
         craftable: false,
+        sources: new Set(),
+        vendors: new Set(),
       };
       groups.set(name, g);
     } else {
@@ -266,9 +270,22 @@ async function main() {
     g.hashes.push(Number(hash));
     g.sockets[hash] = cols.map(c => c.socket); // which socket holds each perk column
     if (item.inventory?.recipeItemHash) g.craftable = true; // has a crafting pattern
+    // Where it drops: the "Source" line from the gun's Collections entry
+    const src = (collectibles || {})[item.collectibleHash]?.sourceString?.replace(/^source:\s*/i, '').trim();
+    if (src) g.sources.add(src);
     hashToGroup.set(Number(hash), g);
   }
   console.log(`Found ${groups.size} random-roll weapons`);
+
+  // Vendors that sell or reward each gun. Xûr is left out: his list is every gun he might ever stock.
+  for (const v of Object.values(vendors || {})) {
+    const vname = v?.displayProperties?.name;
+    if (!vname || /^x[uû]r\b|strange gear/i.test(vname)) continue;
+    for (const e of v.itemList || []) {
+      const g = hashToGroup.get(e.itemHash);
+      if (g) g.vendors.add(vname);
+    }
+  }
 
   // Flatten perk indices so rolls can reference them compactly
   for (const g of groups.values()) {
@@ -485,6 +502,8 @@ async function main() {
       })),
       notes: g.notes,
       craftable: g.craftable,
+      sources: [...g.sources].slice(0, 8),
+      vendors: [...g.vendors].slice(0, 8),
       frame: g.frame || '',
       stats: g.stats || null,
       history: weaponHistory(id),
