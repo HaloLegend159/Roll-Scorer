@@ -142,7 +142,7 @@ main { flex: 1; width: 100%; max-width: var(--wide); margin: 0 auto; padding: 1.
 .perk-detail p.muted { color: var(--muted); }
 .perk-detail .stat { margin-top: 0.4rem; font-size: 0.9rem; color: var(--muted); }
 
-.combos, .notes, .stats, .trend { padding: 1rem var(--pad) 1.25rem; border-top: 1px solid var(--line); }
+.combos, .notes, .stats, .trend, .sources { padding: 1rem var(--pad) 1.25rem; border-top: 1px solid var(--line); }
 .combos h3 { font-weight: 600; font-size: 1rem; margin: 0 0 0.5rem; }
 .combo-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .combo {
@@ -438,3 +438,7 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .more a:hover { border-color: var(--line-strong); background: var(--panel-2); }
 .more b { display: block; font-weight: 600; margin-bottom: 0.2rem; }
 .more span { color: var(--muted); font-size: 0.93rem; }
+
+/* How to get it */
+.sources h3 { font-weight: 600; font-size: 1rem; margin: 0 0 0.5rem; }
+.sources ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; color: var(--soft); max-width: 90ch; }

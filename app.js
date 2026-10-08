@@ -319,6 +319,7 @@
       (w.craftable ? ' <span class="badge craft" title="Has a crafting pattern. Once unlocked, you can craft exactly the roll you want.">Craftable</span>' : '');
     renderApply();
     renderStats();
+    renderSources();
     renderCombos(s);
     renderScore(s, cs);
     renderTrend();
@@ -591,6 +592,25 @@
       for (const [h, v] of Object.entries(perkByIndex(p).s || {})) pts[h] = (pts[h] || 0) + v;
     });
     return st.list.map(d => shownStat(pts[d.h] || 0, d));
+  }
+
+  // How to get it: Bungie's Collections source text, vendors that carry it, and crafting
+  function renderSources() {
+    let el = $('#sources');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'sources';
+      el.className = 'sources';
+      ($('#stats') || $('#perk-detail')).after(el);
+    }
+    const w = state.weapon;
+    const items = [
+      ...(w.sources || []).map(s => esc(s)),
+      ...((w.vendors || []).length ? [`Sold or rewarded by ${w.vendors.map(esc).join(', ')}`] : []),
+      ...(w.craftable ? ['Craftable once you unlock its pattern (Deepsight copies give pattern progress)'] : []),
+    ];
+    el.innerHTML = items.length ? `<h3>How to get it</h3><ul>${items.map(s => `<li>${s}</li>`).join('')}</ul>` : '';
+    el.hidden = !items.length;
   }
 
   function renderStats() {
