@@ -605,17 +605,22 @@
       ($('#stats') || $('#perk-detail')).after(el);
     }
     const w = state.weapon;
-    const now = [
-      ...((w.activities || []).length ? [`Listed as a reward in ${w.activities.map(esc).join(', ')}`] : []),
-      ...((w.vendors || []).length ? [`Sold or rewarded by ${w.vendors.map(esc).join(', ')}`] : []),
-      ...(w.craftable ? ['Craftable once you unlock its pattern (Deepsight copies give pattern progress)'] : []),
-    ];
-    const orig = (w.sources || []).map(esc);
-    if (!now.length && !orig.length) { el.innerHTML = ''; el.hidden = true; return; }
-    el.hidden = false;
-    el.innerHTML = '<h3>How to get it</h3>' +
-      (now.length ? `<ul>${now.map(s => `<li>${s}</li>`).join('')}</ul>` : '') +
-      (orig.length ? `<p class="orig"><span class="muted">Originally from:</span> ${orig.join(' · ')}</p>` : '');
+    // "The Coil: Customize" and "The Coil: Matchmade" are the same place, so show it once
+    const uniq = (list, clean) => [...new Set((list || []).map(clean).filter(Boolean))];
+    const activities = uniq(w.activities, s => s.replace(/:\s*(customi[sz]e|matchmade|normal|standard|expert|master|legend|grandmaster|heroic)\s*$/i, '').trim());
+    const vendors = uniq(w.vendors, s => s.replace(/^weekly:\s*/i, '').trim());
+    const orig = uniq(w.sources, s => s.trim());
+    const tags = list => `<ul class="tags">${list.map(s => `<li>${esc(s)}</li>`).join('')}</ul>`;
+    const rows = [
+      activities.length && ['Drops in', tags(activities)],
+      vendors.length && ['Vendors', tags(vendors)],
+      w.craftable && ['Crafting', '<span>Craftable once you unlock its pattern</span>'],
+      orig.length && ['Originally from', `<span class="muted">${orig.map(esc).join(' · ')}</span>`],
+    ].filter(Boolean);
+    el.hidden = !rows.length;
+    el.innerHTML = rows.length
+      ? `<h3>How to get it</h3><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`
+      : '';
   }
 
   function renderStats() {

@@ -441,8 +441,13 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .more span { color: var(--muted); font-size: 0.93rem; }
 
 /* How to get it */
-.sources h3 { font-weight: 600; font-size: 1rem; margin: 0 0 0.5rem; }
-.sources ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; color: var(--soft); max-width: 90ch; }
-.sources .orig { margin: 0.5rem 0 0; color: var(--soft); }
-.sources ul + .orig { margin-top: 0.75rem; }
-.sources .small { margin: 0.5rem 0 0; }
+.sources h3 { font-weight: 600; font-size: 1rem; margin: 0 0 0.75rem; }
+.sources dl { margin: 0; display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 0.6rem 1rem; align-items: start; }
+.sources dt { color: var(--muted); font-size: 0.9rem; padding-top: 0.2rem; }
+.sources dd { margin: 0; }
+.sources .tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.sources .tags li { padding: 0.2rem 0.6rem; border: 1px solid var(--line-strong); border-radius: 6px; font-size: 0.9rem; background: var(--panel-2); }
+@media (max-width: 560px) {
+  .sources dl { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
+  .sources dd { margin-bottom: 0.6rem; }
+}
