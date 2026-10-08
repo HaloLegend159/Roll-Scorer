@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eternal Blazon God Roll (PvE &amp; PvP) · D2 Roll Check</title>
+  <meta name="description" content="Eternal Blazon god roll for Destiny 2: Rapid Hit + Kill Clip tops the list. See the best PvE and PvP perks, top trait combos and how to get it, then score your own Eternal Blazon out of 100.">
+  <link rel="canonical" href="https://d2rollcheck.com/w/eternal-blazon/">
+  <link rel="icon" href="/icon-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <meta name="theme-color" content="#0e0f11">
+  <!-- Link preview for Discord, Reddit, iMessage and so on -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="D2 Roll Check">
+  <meta property="og:title" content="Eternal Blazon God Roll (PvE &amp; PvP) · D2 Roll Check">
+  <meta property="og:description" content="Eternal Blazon god roll for Destiny 2: Rapid Hit + Kill Clip tops the list. See the best PvE and PvP perks, top trait combos and how to get it, then score your own Eternal Blazon out of 100.">
+  <meta property="og:url" content="https://d2rollcheck.com/w/eternal-blazon/">
+  <meta property="og:image" content="https://d2rollcheck.com/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="D2 Roll Check: a Destiny 2 weapon roll showing a score of 92 out of 100, God roll">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script>
+    // Bungie sign-in returned to this page instead of the inventory page: pass it along
+    if (/[?&]code=/.test(location.search)) location.replace('inventory.html' + location.search);
+  </script>
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="/"><img src="/icon.svg" alt="" width="26" height="26">D2 Roll Check</a>
+      <nav class="tabs" aria-label="Pages">
+        <a href="/" aria-current="page">Score a roll</a>
+        <a href="/inventory.html">My inventory</a>
+        <a href="/xur.html">Xûr</a>
+        <a href="/compare.html">Compare</a>
+        <a href="/guide.html">Guide</a>
+      </nav>
+      <a id="tip" class="tip" href="https://ko-fi.com/halolegend159" target="_blank" rel="noopener" hidden>Tip jar</a>
+    </div>
+  </header>
+
+  <main id="app">
+    <section id="empty" class="hero" hidden>
+      <h1>Is your Destiny 2 roll worth keeping?</h1>
+      <p>Check any weapon for a god roll. Pick the perks on a Destiny 2 weapon and get a score out of 100, based on the rolls the community recommends and what players actually use.</p>
+    </section>
+
+    <div class="finder">
+      <div class="search" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="results">
+        <label for="q" class="sr-only">Search weapons</label>
+        <input id="q" type="search" placeholder="Search a weapon, like Fatebringer or Rose" autocomplete="off" aria-autocomplete="list" aria-controls="results">
+        <ul id="results" role="listbox" hidden></ul>
+      </div>
+      <p id="status">Loading weapons…</p>
+    </div>
+
+    <section class="home">
+      <div id="popular" hidden>
+        <h3>Most used right now</h3>
+        <ol id="pop-list" class="pop"></ol>
+      </div>
+
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li><b>Find the weapon</b><span>Search any of the weapons in the game that can drop with random perks.</span></li>
+        <li><b>Pick its perks</b><span>Tap one perk in each column, the same way they appear on the gun in game.</span></li>
+        <li><b>Read the score</b><span>See how close it is to a recommended roll, what to chase instead, and why the roll is rated.</span></li>
+      </ol>
+
+      <h3>More tools</h3>
+      <ul class="more">
+        <li><a href="/inventory.html"><b>My inventory</b><span>Sign in with Bungie to score every weapon you own at once.</span></a></li>
+        <li><a href="/xur.html"><b>Xûr</b><span>The weapons Xûr is selling this week, scored.</span></a></li>
+        <li><a href="/compare.html"><b>Compare</b><span>Put up to three guns side by side and see usage rankings by type.</span></a></li>
+      </ul>
+    </section>
+
+    <section id="weapon" hidden>
+      <div class="layout">
+        <div class="perks-area">
+          <div class="weapon-head">
+            <img id="w-icon" alt="" width="72" height="72">
+            <div>
+              <h2 id="w-name"></h2>
+              <p id="w-type" class="muted"></p>
+            </div>
+            <div class="modes" role="radiogroup" aria-label="Activity">
+              <button role="radio" data-mode="all" aria-checked="true">All</button>
+              <button role="radio" data-mode="pve" aria-checked="false">PvE</button>
+              <button role="radio" data-mode="pvp" aria-checked="false">PvP</button>
+            </div>
+          </div>
+          <div id="columns" class="columns"></div>
+          <div id="perk-detail" class="perk-detail" aria-live="polite">
+            <p class="muted">Tap one perk in each column. A solid gold dot marks the most recommended perk in a column and a gold ring marks a strong alternative. After you pick a perk, the dots in the other columns update to show what pairs well with it.</p>
+          </div>
+          <div class="actions">
+            <button id="clear" class="ghost">Clear perks</button>
+            <button id="share" class="ghost">Copy link to this roll</button>
+            <button id="apply-game" class="ghost apply" hidden></button>
+            <span id="apply-game-msg" class="apply-msg" role="status" hidden></span>
+          </div>
+        </div>
+
+        <aside id="score" class="score" aria-live="polite"></aside>
+      </div>
+    </section>
+    <section class="about">
+      <h1>Eternal Blazon god roll</h1>
+      <p>Legendary Scout Rifle, Lightweight Frame. Based on 194 rolls recommended by the Destiny 2 community. Pick the perks on your copy above to score it out of 100.</p>
+      <div class="about-grid"><div><h2>Eternal Blazon PvE god roll</h2><p class="about-roll">Candle PS · Armor-Piercing Rounds · Rapid Hit · Kill Clip</p><dl><dt>Scope</dt><dd>Candle PS, Spark PS, Flash HS5</dd><dt>Magazine</dt><dd>High-Caliber Rounds, Ricochet Rounds, Armor-Piercing Rounds</dd><dt>Trait</dt><dd>Rapid Hit, Overflow, Quickdraw</dd><dt>Trait</dt><dd>Disruption Break, Kill Clip, One for All</dd></dl></div><div><h2>Eternal Blazon PvP god roll</h2><p class="about-roll">Impulse MS3 · High-Caliber Rounds · Rapid Hit · Kill Clip</p><dl><dt>Scope</dt><dd>Impulse MS3, Flash HS5, Transmission MS7</dd><dt>Magazine</dt><dd>High-Caliber Rounds, Ricochet Rounds</dd><dt>Trait</dt><dd>Rapid Hit, Killing Wind, Overflow</dd><dt>Trait</dt><dd>Kill Clip, Rangefinder</dd></dl></div></div>
+      <h2>Best trait combos on Eternal Blazon</h2><ul><li>Overflow + Disruption Break <span class="muted">(31 rolls)</span></li><li>Rapid Hit + Disruption Break <span class="muted">(31 rolls)</span></li><li>Quickdraw + Disruption Break <span class="muted">(20 rolls)</span></li><li>Rapid Hit + Kill Clip <span class="muted">(19 rolls)</span></li><li>Overflow + Kill Clip <span class="muted">(19 rolls)</span></li></ul>
+      <h2>How to get Eternal Blazon</h2><p>Originally from Open Legendary engrams and earn faction rank-up packages..</p>
+      <h2>What curators say</h2><blockquote><p>[YeezyGT&#39;s S15] (PvE): [MW: ANY] &quot;I&#39;ve been hunting an Overflow/Disruption Break roll on this gun for so long, that Scouts don&#39;t even have a Champion mod anymore. Scopes are mainly personal preference, so I&#39;ve listed all the short-to-mid-zoom options. Rapid Hit is fantastic here, Quickdraw feels really great too.…</p></blockquote><blockquote><p>File auto generated from csv pandapaxxy-s15-roundup (tags: controller,god-pve)</p></blockquote>
+      <h2>Other Scout Rifles</h2><ul class="about-links"><li><a href="/w/hung-jury-sr4/">Hung Jury SR4</a></li><li><a href="/w/servant-leader/">Servant Leader</a></li><li><a href="/w/hung-jury-sr4-adept/">Hung Jury SR4 (Adept)</a></li><li><a href="/w/vision-of-confluence/">Vision of Confluence</a></li><li><a href="/w/vouchsafe/">Vouchsafe</a></li><li><a href="/w/vision-of-confluence-timelost/">Vision of Confluence (Timelost)</a></li><li><a href="/w/pointed-inquiry/">Pointed Inquiry</a></li><li><a href="/w/the-guiding-sight/">The Guiding Sight</a></li></ul>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p><a href="/w/">All weapons</a> · <a href="/guide.html">How rolls are scored</a></p>
+    <p>Roll data from the <a href="https://github.com/48klocs/dim-wish-list-sources">DIM community wish list</a>. Weapon data from the Bungie API. Not affiliated with Bungie.</p>
+    <p id="meta" class="muted"></p>
+  </footer>
+
+  <script src="/config.js"></script>
+  <script src="/apply.js"></script>
+  <script src="/favs.js"></script>
+  <script src="/scoring.js"></script>
+  <script>window.RS_START = "eternal-blazon";</script>
+  <script src="/app.js"></script>
+</body>
+</html>

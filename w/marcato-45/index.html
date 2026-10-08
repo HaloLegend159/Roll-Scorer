@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marcato-45 God Roll (PvE &amp; PvP) · D2 Roll Check</title>
+  <meta name="description" content="Marcato-45 god roll for Destiny 2: Triple Tap + Onslaught tops the list. See the best PvE and PvP perks, top trait combos and how to get it, then score your own Marcato-45 out of 100.">
+  <link rel="canonical" href="https://d2rollcheck.com/w/marcato-45/">
+  <link rel="icon" href="/icon-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <meta name="theme-color" content="#0e0f11">
+  <!-- Link preview for Discord, Reddit, iMessage and so on -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="D2 Roll Check">
+  <meta property="og:title" content="Marcato-45 God Roll (PvE &amp; PvP) · D2 Roll Check">
+  <meta property="og:description" content="Marcato-45 god roll for Destiny 2: Triple Tap + Onslaught tops the list. See the best PvE and PvP perks, top trait combos and how to get it, then score your own Marcato-45 out of 100.">
+  <meta property="og:url" content="https://d2rollcheck.com/w/marcato-45/">
+  <meta property="og:image" content="https://d2rollcheck.com/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="D2 Roll Check: a Destiny 2 weapon roll showing a score of 92 out of 100, God roll">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script>
+    // Bungie sign-in returned to this page instead of the inventory page: pass it along
+    if (/[?&]code=/.test(location.search)) location.replace('inventory.html' + location.search);
+  </script>
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="/"><img src="/icon.svg" alt="" width="26" height="26">D2 Roll Check</a>
+      <nav class="tabs" aria-label="Pages">
+        <a href="/" aria-current="page">Score a roll</a>
+        <a href="/inventory.html">My inventory</a>
+        <a href="/xur.html">Xûr</a>
+        <a href="/compare.html">Compare</a>
+        <a href="/guide.html">Guide</a>
+      </nav>
+      <a id="tip" class="tip" href="https://ko-fi.com/halolegend159" target="_blank" rel="noopener" hidden>Tip jar</a>
+    </div>
+  </header>
+
+  <main id="app">
+    <section id="empty" class="hero" hidden>
+      <h1>Is your Destiny 2 roll worth keeping?</h1>
+      <p>Check any weapon for a god roll. Pick the perks on a Destiny 2 weapon and get a score out of 100, based on the rolls the community recommends and what players actually use.</p>
+    </section>
+
+    <div class="finder">
+      <div class="search" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="results">
+        <label for="q" class="sr-only">Search weapons</label>
+        <input id="q" type="search" placeholder="Search a weapon, like Fatebringer or Rose" autocomplete="off" aria-autocomplete="list" aria-controls="results">
+        <ul id="results" role="listbox" hidden></ul>
+      </div>
+      <p id="status">Loading weapons…</p>
+    </div>
+
+    <section class="home">
+      <div id="popular" hidden>
+        <h3>Most used right now</h3>
+        <ol id="pop-list" class="pop"></ol>
+      </div>
+
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li><b>Find the weapon</b><span>Search any of the weapons in the game that can drop with random perks.</span></li>
+        <li><b>Pick its perks</b><span>Tap one perk in each column, the same way they appear on the gun in game.</span></li>
+        <li><b>Read the score</b><span>See how close it is to a recommended roll, what to chase instead, and why the roll is rated.</span></li>
+      </ol>
+
+      <h3>More tools</h3>
+      <ul class="more">
+        <li><a href="/inventory.html"><b>My inventory</b><span>Sign in with Bungie to score every weapon you own at once.</span></a></li>
+        <li><a href="/xur.html"><b>Xûr</b><span>The weapons Xûr is selling this week, scored.</span></a></li>
+        <li><a href="/compare.html"><b>Compare</b><span>Put up to three guns side by side and see usage rankings by type.</span></a></li>
+      </ul>
+    </section>
+
+    <section id="weapon" hidden>
+      <div class="layout">
+        <div class="perks-area">
+          <div class="weapon-head">
+            <img id="w-icon" alt="" width="72" height="72">
+            <div>
+              <h2 id="w-name"></h2>
+              <p id="w-type" class="muted"></p>
+            </div>
+            <div class="modes" role="radiogroup" aria-label="Activity">
+              <button role="radio" data-mode="all" aria-checked="true">All</button>
+              <button role="radio" data-mode="pve" aria-checked="false">PvE</button>
+              <button role="radio" data-mode="pvp" aria-checked="false">PvP</button>
+            </div>
+          </div>
+          <div id="columns" class="columns"></div>
+          <div id="perk-detail" class="perk-detail" aria-live="polite">
+            <p class="muted">Tap one perk in each column. A solid gold dot marks the most recommended perk in a column and a gold ring marks a strong alternative. After you pick a perk, the dots in the other columns update to show what pairs well with it.</p>
+          </div>
+          <div class="actions">
+            <button id="clear" class="ghost">Clear perks</button>
+            <button id="share" class="ghost">Copy link to this roll</button>
+            <button id="apply-game" class="ghost apply" hidden></button>
+            <span id="apply-game-msg" class="apply-msg" role="status" hidden></span>
+          </div>
+        </div>
+
+        <aside id="score" class="score" aria-live="polite"></aside>
+      </div>
+    </section>
+    <section class="about">
+      <h1>Marcato-45 god roll</h1>
+      <p>Legendary Machine Gun, Adaptive Frame. Based on 152 rolls recommended by the Destiny 2 community. Pick the perks on your copy above to score it out of 100.</p>
+      <div class="about-grid"><div><h2>Marcato-45 PvE god roll</h2><p class="about-roll">Arrowhead Brake · Appended Mag · Triple Tap · Onslaught</p><dl><dt>Barrel</dt><dd>Arrowhead Brake, Smallbore, Chambered Compensator</dd><dt>Magazine</dt><dd>Appended Mag, Tactical Mag, Flared Magwell</dd><dt>Trait</dt><dd>Triple Tap, Attrition Orbs, Slice</dd><dt>Trait</dt><dd>Onslaught, Hatchling, Golden Tricorn</dd></dl></div><div><h2>Marcato-45 PvP god roll</h2><p class="about-roll">Hammer-Forged Rifling · Accurized Rounds · Threat Detector · Onslaught</p><dl><dt>Barrel</dt><dd>Hammer-Forged Rifling, Smallbore</dd><dt>Magazine</dt><dd>Accurized Rounds</dd><dt>Trait</dt><dd>Threat Detector, Demolitionist, Slice</dd><dt>Trait</dt><dd>Onslaught, Golden Tricorn</dd></dl></div></div>
+      <h2>Best trait combos on Marcato-45</h2><ul><li>Triple Tap + Onslaught <span class="muted">(23 rolls)</span></li><li>Threat Detector + Onslaught <span class="muted">(22 rolls)</span></li><li>Demolitionist + Onslaught <span class="muted">(22 rolls)</span></li><li>Slice + Hatchling <span class="muted">(20 rolls)</span></li><li>Attrition Orbs + Onslaught <span class="muted">(9 rolls)</span></li></ul>
+      <h2>How to get Marcato-45</h2><p>Originally from Open Legendary engrams and earn faction rank-up packages..</p>
+      <h2>What curators say</h2><blockquote><p>Adamsdown_Boy - information as at v8.0.0.6 PvE / PvE-Boss / PvE-BossSpec / PvE-EndGame / PvE-God / M+KB / Controller): PvE pick for killing boss-tier Subjugators. As per @mossy_max (https://x.com/mossy_max/status/1804893174965338387) - boss-tier Subjugators have a 20% damage reduction to all non-matching damage,…</p></blockquote><blockquote><p>Inspired by @PodvsEnemies Podcast vs Enemies episode 934 (https://open.spotify.com/episode/0M24D3moUjRCXj0AtIsCCx?si=208c6d31bdb7453e) with @Saint_Kabr and @ImpetusAlways. First-choice PvE pick for add-clearing Minor spec enemies in end-game content. Marcato-45 stars off with decent stats in comparison to its peers…</p></blockquote>
+      <h2>Other Machine Guns</h2><ul class="about-links"><li><a href="/w/corrective-measure/">Corrective Measure</a></li><li><a href="/w/corrective-measure-timelost/">Corrective Measure (Timelost)</a></li><li><a href="/w/hammerhead/">Hammerhead</a></li><li><a href="/w/21-delirium/">21% Delirium</a></li><li><a href="/w/unwavering-duty/">Unwavering Duty</a></li><li><a href="/w/temporal-clause/">Temporal Clause</a></li><li><a href="/w/pro-memoria/">Pro Memoria</a></li><li><a href="/w/thermal-erosion/">Thermal Erosion</a></li></ul>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p><a href="/w/">All weapons</a> · <a href="/guide.html">How rolls are scored</a></p>
+    <p>Roll data from the <a href="https://github.com/48klocs/dim-wish-list-sources">DIM community wish list</a>. Weapon data from the Bungie API. Not affiliated with Bungie.</p>
+    <p id="meta" class="muted"></p>
+  </footer>
+
+  <script src="/config.js"></script>
+  <script src="/apply.js"></script>
+  <script src="/favs.js"></script>
+  <script src="/scoring.js"></script>
+  <script>window.RS_START = "marcato-45";</script>
+  <script src="/app.js"></script>
+</body>
+</html>
