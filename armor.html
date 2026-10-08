@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Armor · D2 Roll Check</title>
+  <meta name="description" content="Sign in with Bungie to sort your Destiny 2 armor by the stats your build needs, find duplicates to shard and see which set bonuses you can complete.">
+  <link rel="canonical" href="https://d2rollcheck.com/armor.html">
+  <link rel="icon" href="icon-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="theme-color" content="#0e0f11">
+  <!-- Link preview for Discord, Reddit, iMessage and so on -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="D2 Roll Check">
+  <meta property="og:title" content="Armor · D2 Roll Check">
+  <meta property="og:description" content="Sign in with Bungie to sort your Destiny 2 armor by the stats your build needs, find duplicates to shard and see which set bonuses you can complete.">
+  <meta property="og:url" content="https://d2rollcheck.com/armor.html">
+  <meta property="og:image" content="https://d2rollcheck.com/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="D2 Roll Check: a Destiny 2 weapon roll showing a score of 92 out of 100, God roll">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <h1 class="brand"><img src="icon.svg" alt="" width="26" height="26">D2 Roll Check</h1>
+      <nav class="tabs" aria-label="Pages">
+        <a href="./">Score a roll</a>
+        <a href="inventory.html">My inventory</a>
+        <a href="armor.html" aria-current="page">Armor</a>
+        <a href="xur.html">Xûr</a>
+        <a href="compare.html">Compare</a>
+        <a href="guide.html">Guide</a>
+      </nav>
+      <a id="tip" class="tip" href="https://ko-fi.com/halolegend159" target="_blank" rel="noopener" hidden>Tip jar</a>
+    </div>
+  </header>
+
+  <main id="app">
+    <p class="page-intro">Sort your armor by the stats your build needs, find pieces you can shard, and see which set bonuses you're close to.</p>
+    <section id="signed-out" class="signin" hidden>
+      <h2>Sort your armor</h2>
+      <p>Sign in with your Bungie account to see every armor piece on your characters and in your vault, with its tier, archetype, set and stats.</p>
+      <button id="signin" class="primary">Sign in with Bungie</button>
+      <p class="muted small">Read-only. Your login stays in this browser and is never sent anywhere except Bungie.</p>
+    </section>
+
+    <section id="setup" class="signin" hidden>
+      <h2>Armor isn't set up yet</h2>
+      <p>The site owner needs to add a Bungie API key and OAuth client ID to <code>config.js</code>.</p>
+    </section>
+
+    <section id="loading" class="signin" hidden>
+      <p id="load-msg">Loading…</p>
+    </section>
+
+    <section id="inv" hidden>
+      <div class="inv-bar">
+        <p id="who" class="muted"></p>
+        <div class="inv-actions">
+          <button id="refresh" class="ghost">Refresh</button>
+          <button id="signout" class="ghost">Sign out</button>
+        </div>
+      </div>
+
+      <div class="ar-build">
+        <h2 class="ar-h">Your build's stats</h2>
+        <p class="muted small">Pick up to three stats your build needs. Pieces are ranked by how much of those stats they give. Pick nothing to rank by total stats.</p>
+        <div id="ar-stats" class="ar-chips" role="group" aria-label="Build stats"></div>
+      </div>
+
+      <div class="filters">
+        <label class="field"><span>Search</span><input id="a-name" type="search" placeholder="Armor name"></label>
+        <label class="field"><span>Class</span><select id="a-class"><option value="">All classes</option></select></label>
+        <label class="field"><span>Slot</span><select id="a-slot"><option value="">All slots</option></select></label>
+        <label class="field"><span>Set</span><select id="a-set"><option value="">All sets</option></select></label>
+        <label class="field"><span>Archetype</span><select id="a-arch"><option value="">All archetypes</option></select></label>
+        <label class="field"><span>Tier</span><select id="a-tier"><option value="">All tiers</option></select></label>
+        <label class="field"><span>Sort</span>
+          <select id="a-sort">
+            <option value="build">Best for my build</option>
+            <option value="total">Total stats</option>
+            <option value="tier">Tier, high to low</option>
+            <option value="newest">Newest first</option>
+            <option value="name">Name</option>
+          </select>
+        </label>
+        <label class="check"><input id="a-shard" type="checkbox"> <span id="a-shard-label">Shard candidates only</span></label>
+        <label class="check"><input id="a-exotic" type="checkbox"> Hide exotics</label>
+      </div>
+
+      <p id="a-summary" class="muted"></p>
+      <ul id="a-list" class="ar-list"></ul>
+
+      <details id="sets" class="ar-sets">
+        <summary>Your armor sets</summary>
+        <div id="sets-body"></div>
+      </details>
+      <p class="caveat-line muted">Shard candidates are pieces where you own another of the same class, slot, set and archetype that's at least the same tier and better in the stats you picked. Check your loadouts before you dismantle anything.</p>
+      <pre id="debug" class="debug" hidden></pre>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p><a href="w/">All weapons</a> · <a href="guide.html">How rolls are scored</a></p>
+    <p>Armor data from the Bungie API. Not affiliated with Bungie.</p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="armor.js"></script>
+</body>
+</html>
