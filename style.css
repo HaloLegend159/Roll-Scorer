@@ -43,6 +43,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   display: flex; align-items: center; gap: 0.6rem;
 }
 .brand img { display: block; }
+a.brand { text-decoration: none; color: var(--text); }
 .tip {
   text-decoration: none; font-size: 0.93rem;
   padding: 0.45rem 0.85rem; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--soft);
@@ -412,7 +413,7 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .home { padding-bottom: 1rem; }
 .hero { padding: 2.5rem 0 1.5rem; max-width: 46rem; }
 #empty[hidden] ~ .home, #empty[hidden] ~ .finder #status { display: none; }
-.hero h2 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 0.75rem; }
+.hero h1, .hero h2 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 0.75rem; }
 .hero p { margin: 0; color: var(--soft); font-size: 1.05rem; }
 #status { margin: 0.6rem 0 0; font-size: 0.87rem; color: var(--muted); }
 .home h3 { font-size: 0.87rem; font-weight: 500; color: var(--muted); margin: 2.75rem 0 0.9rem; }
@@ -442,3 +443,6 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 /* How to get it */
 .sources h3 { font-weight: 600; font-size: 1rem; margin: 0 0 0.5rem; }
 .sources ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; color: var(--soft); max-width: 90ch; }
+.sources .orig { margin: 0.5rem 0 0; color: var(--soft); }
+.sources ul + .orig { margin-top: 0.75rem; }
+.sources .small { margin: 0.5rem 0 0; }

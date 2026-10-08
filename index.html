@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>D2 Roll Check · Destiny 2 weapon roll scorer</title>
-  <meta name="description" content="Pick the perks on your Destiny 2 weapon and get a score based on community recommended rolls.">
+  <title>D2 Roll Check · Destiny 2 God Roll Checker and Weapon Roll Scorer</title>
+  <meta name="description" content="Check if your Destiny 2 weapon is a god roll. Pick its perks and get a score out of 100 based on community recommended rolls and what players actually use, or sign in to score your whole vault.">
   <link rel="canonical" href="https://d2rollcheck.com/">
   <link rel="icon" href="icon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -13,14 +13,26 @@
   <!-- Link preview for Discord, Reddit, iMessage and so on -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="D2 Roll Check">
-  <meta property="og:title" content="D2 Roll Check · Destiny 2 weapon roll scorer">
-  <meta property="og:description" content="Pick the perks on your Destiny 2 weapon and get a score based on community recommended rolls.">
+  <meta property="og:title" content="D2 Roll Check · Destiny 2 God Roll Checker and Weapon Roll Scorer">
+  <meta property="og:description" content="Check if your Destiny 2 weapon is a god roll. Pick its perks and get a score out of 100 based on community recommended rolls and what players actually use, or sign in to score your whole vault.">
   <meta property="og:url" content="https://d2rollcheck.com/">
   <meta property="og:image" content="https://d2rollcheck.com/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="D2 Roll Check: a Destiny 2 weapon roll showing a score of 92 out of 100, God roll">
   <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "D2 Roll Check",
+    "url": "https://d2rollcheck.com/",
+    "description": "Destiny 2 god roll checker. Score any weapon roll against community recommended rolls and real usage data.",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Any",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -33,7 +45,7 @@
 <body>
   <header class="top">
     <div class="bar">
-      <h1 class="brand"><img src="icon.svg" alt="" width="26" height="26">D2 Roll Check</h1>
+      <a class="brand" href="./"><img src="icon.svg" alt="" width="26" height="26">D2 Roll Check</a>
       <nav class="tabs" aria-label="Pages">
         <a href="./" aria-current="page">Score a roll</a>
         <a href="inventory.html">My inventory</a>
@@ -46,8 +58,8 @@
 
   <main id="app">
     <section id="empty" class="hero">
-      <h2>Is this roll worth keeping?</h2>
-      <p>Pick the perks on a Destiny 2 weapon and get a score out of 100, based on the rolls the community recommends and what players actually use.</p>
+      <h1>Is your Destiny 2 roll worth keeping?</h1>
+      <p>Check any weapon for a god roll. Pick the perks on a Destiny 2 weapon and get a score out of 100, based on the rolls the community recommends and what players actually use.</p>
     </section>
 
     <div class="finder">

@@ -42,7 +42,7 @@
     const top = state.index.filter(w => w.u && w.u[0] > 0).sort((x, y) => y.u[0] - x.u[0]).slice(0, 12);
     if (!top.length) return;
     $('#pop-list').innerHTML = top.map((w, i) =>
-      `<li><a href="#${encodeURIComponent(w.id)}">` +
+      `<li><a href="#/${encodeURIComponent(w.id)}/">` +
       (w.icon ? `<img src="${BUNGIE + w.icon}" alt="" loading="lazy" width="44" height="44">` : '<span></span>') +
       `<span><span class="pn">${esc(w.name)}</span><br><span class="pt">${esc(w.type)}</span></span>` +
       `<span class="pr">#${i + 1}</span></a></li>`).join('');
@@ -594,7 +594,8 @@
     return st.list.map(d => shownStat(pts[d.h] || 0, d));
   }
 
-  // How to get it: Bungie's Collections source text, vendors that carry it, and crafting
+  // How to get it, all from Bungie's data: activity reward previews, vendors, crafting,
+  // and the original Collections source (which Bungie never updates after release)
   function renderSources() {
     let el = $('#sources');
     if (!el) {
@@ -604,13 +605,17 @@
       ($('#stats') || $('#perk-detail')).after(el);
     }
     const w = state.weapon;
-    const items = [
-      ...(w.sources || []).map(s => esc(s)),
+    const now = [
+      ...((w.activities || []).length ? [`Listed as a reward in ${w.activities.map(esc).join(', ')}`] : []),
       ...((w.vendors || []).length ? [`Sold or rewarded by ${w.vendors.map(esc).join(', ')}`] : []),
       ...(w.craftable ? ['Craftable once you unlock its pattern (Deepsight copies give pattern progress)'] : []),
     ];
-    el.innerHTML = items.length ? `<h3>How to get it</h3><ul>${items.map(s => `<li>${s}</li>`).join('')}</ul>` : '';
-    el.hidden = !items.length;
+    const orig = (w.sources || []).map(esc);
+    if (!now.length && !orig.length) { el.innerHTML = ''; el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = '<h3>How to get it</h3>' +
+      (now.length ? `<ul>${now.map(s => `<li>${s}</li>`).join('')}</ul>` : '') +
+      (orig.length ? `<p class="orig"><span class="muted">Originally from:</span> ${orig.join(' · ')}</p>` : '');
   }
 
   function renderStats() {
