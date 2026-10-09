@@ -42,7 +42,7 @@ function page(template, { title, desc, url, start, body }) {
   let html = setHead(rootLinks(template), { title, desc, url });
   html = html.replace('<section id="empty" class="hero">', '<section id="empty" class="hero" hidden>');
   // Weapon pages show the loading placeholder straight away
-  if (start) html = html.replace('<div id="w-skel" class="skel-panel" aria-hidden="true" hidden>', '<div id="w-skel" class="skel-panel" aria-hidden="true">');
+  if (start) html = html.replace('<div id="w-skel" class="loader" role="status" hidden>', '<div id="w-skel" class="loader" role="status">');
   html = html.replace('  </main>', `${body}\n  </main>`);
   if (start) html = html.replace('<script src="/app.js">', `<script>window.RS_START = ${JSON.stringify(start)};</script>\n  <script src="/app.js">`);
   return html;
