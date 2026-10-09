@@ -532,7 +532,15 @@
     const idx = r && r.noteRoll >= 0 && m.notes ? m.notes[r.noteRoll] : [];
     if (!idx || !idx.length) { el.innerHTML = ''; return; }
     const heading = r.matches ? 'Why this roll is recommended' : 'Notes on the closest recommended roll';
-    el.innerHTML = `<h3>${heading}</h3>` + idx.slice(0, 2).map(n => {
+    // Curators often post the same note on several rolls, so skip repeats
+    const seen = new Set();
+    const picked = idx.filter(n => {
+      const k = (all[n] || '').slice(0, 200);
+      if (!k || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    el.innerHTML = `<h3>${heading}</h3>` + picked.slice(0, 2).map(n => {
       const text = all[n] || '';
       if (text.length <= 320) return `<blockquote><p>${esc(text)}</p></blockquote>`;
       return `<blockquote><p class="clip">${esc(text.slice(0, 300).replace(/\s+\S*$/, ''))}…</p>` +
