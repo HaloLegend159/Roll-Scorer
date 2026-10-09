@@ -65,7 +65,7 @@
       throw new Error('Sign-in check failed. Make sure you start sign-in from this page, in the same browser tab.');
     }
 
-    loading('Finishing sign-in…');
+    loading('Signing in…');
     const res = await fetch(`${BUNGIE}/Platform/App/OAuth/token/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-API-Key': CFG.bungieApiKey },
@@ -125,7 +125,7 @@
           if (res.ok) state.weapons.set(id, RollScore.prepare(await res.json()));
         } catch {}
         done++;
-        $('#load-msg').textContent = `Loading weapon data… ${done} of ${ids.size}`;
+        $('#load-msg').textContent = `Decrypting weapons… ${done} of ${ids.size}`;
         progress(done / ids.size);
       }
     };
@@ -133,7 +133,7 @@
   }
 
   async function loadInventory() {
-    loading('Loading your account…');
+    loading('Contacting the Tower…');
     await loadLookup();
     const mem = await api('/User/GetMembershipsForCurrentUser/');
     const list = mem.destinyMemberships || [];
@@ -143,7 +143,7 @@
       ? `${m.bungieGlobalDisplayName}#${String(m.bungieGlobalDisplayNameCode).padStart(4, '0')}`
       : m.displayName;
 
-    loading('Loading your inventory…');
+    loading('Opening your vault…');
     const p = await api(`/Destiny2/${m.membershipType}/Profile/${m.membershipId}/?components=102,200,201,205,300,305,309,310`);
 
     const raw = [];
@@ -166,13 +166,13 @@
 
     const owned = raw.filter(r => r.it.itemInstanceId && state.lookup.items[r.it.itemHash]);
     const ids = new Set(owned.map(r => state.lookup.items[r.it.itemHash][0]));
-    loading(`Loading weapon data… 0 of ${ids.size}`);
+    loading(`Decrypting weapons… 0 of ${ids.size}`);
     await loadWeapons(ids);
 
     state.items = owned.map(r => readItem(r, p)).filter(Boolean);
     // Let the Score a roll page apply perks for weapons opened from here
     RollApply.saveAll(Object.fromEntries(state.items.filter(x => x.applyInfo).map(x => [x.iid, x.applyInfo])));
-    loading('Scoring…');
+    loading('Checking your rolls…');
     await scoreAll();
     buildTypeFilter();
     show('inv');

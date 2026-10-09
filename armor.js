@@ -53,7 +53,7 @@
   // ---------- Loading ----------
 
   async function load() {
-    loading('Loading armor data…');
+    loading('Pulling armor records…');
     if (!state.data) {
       const res = await fetch('data/armor.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error('Armor data is missing. Run the "Update roll data" workflow.');
@@ -61,7 +61,7 @@
     }
     const A = state.data;
 
-    loading('Loading your account…');
+    loading('Contacting the Tower…');
     const mem = await api('/User/GetMembershipsForCurrentUser/');
     const list = mem.destinyMemberships || [];
     const m = list.find(x => x.membershipId === mem.primaryMembershipId) || list[0];
@@ -70,7 +70,7 @@
       ? `${m.bungieGlobalDisplayName}#${String(m.bungieGlobalDisplayNameCode).padStart(4, '0')}`
       : m.displayName;
 
-    loading('Loading your armor…');
+    loading('Opening your vault…');
     const p = await api(`/Destiny2/${m.membershipType}/Profile/${m.membershipId}/?components=102,200,201,205,300,304,305`);
     state.raw = p;
 

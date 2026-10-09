@@ -602,27 +602,34 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .loader { min-height: 60vh; display: grid; place-content: center; justify-items: center; gap: 1.25rem; text-align: center; }
 .loader-sm { min-height: 12rem; }
 .loader p { margin: 0; color: var(--muted); font-size: 0.9rem; max-width: 32rem; }
-.tris { display: flex; gap: 14px; }
-.tris i {
-  display: block; width: 22px; height: 19px; background: var(--text);
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  transform-origin: 50% 33.3%; /* spin around the triangle's centre */
-  animation: tri-turn 3s infinite;
-}
-.tris i:nth-child(2) { animation-delay: 0.2s; }
-.tris i:nth-child(3) { animation-delay: 0.4s; }
-.tris i:nth-child(4) { animation-delay: 0.6s; }
-@keyframes tri-turn {
-  0% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); }
-  32% { transform: rotate(-55deg); animation-timing-function: cubic-bezier(0.7, 0, 0.2, 1); }
-  80%, 100% { transform: rotate(360deg); }
-}
+/* Loader A, My inventory: a gold engram traces itself, its facets light up, it glows, then it starts again */
+.ld-engram { width: 80px; height: 80px; overflow: visible; }
+.ld-engram .shell { fill: none; stroke: var(--gold); stroke-width: 1.6; stroke-linejoin: round; stroke-dasharray: 120; stroke-dashoffset: 120; animation: eng-trace 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+.ld-engram .f { stroke: var(--gold); stroke-width: 1; opacity: 0; animation: eng-facet 3.2s ease-in-out infinite; }
+.ld-engram .f:nth-of-type(2) { animation-delay: 0.12s; }
+.ld-engram .f:nth-of-type(3) { animation-delay: 0.24s; }
+.ld-engram .core { fill: var(--gold); opacity: 0; transform-origin: 20px 20px; animation: eng-core 3.2s ease-in-out infinite; }
+@keyframes eng-trace { 0% { stroke-dashoffset: 120; } 45%, 80% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -120; } }
+@keyframes eng-facet { 0%, 35% { opacity: 0; } 50%, 75% { opacity: 0.55; } 92%, 100% { opacity: 0; } }
+@keyframes eng-core { 0%, 48% { opacity: 0; transform: scale(0.4); } 62% { opacity: 0.9; transform: scale(1); } 80% { opacity: 0.25; transform: scale(1.15); } 100% { opacity: 0; transform: scale(1.3); } }
+
+/* Loader B, everywhere else: thin rings turning at different speeds around a gold diamond */
+.ld-rings { position: relative; width: 96px; height: 96px; }
+.loader-sm .ld-rings { width: 72px; height: 72px; }
+.ld-rings span { position: absolute; border-radius: 50%; border: 1.5px solid transparent; }
+.ld-rings span:nth-child(1) { inset: 0; border-top-color: var(--text); border-right-color: var(--text); animation: ld-spin 2.6s cubic-bezier(0.55, 0.1, 0.45, 0.9) infinite; }
+.ld-rings span:nth-child(2) { inset: 14%; border-bottom-color: var(--gold); border-left-color: var(--gold); animation: ld-spin 1.9s cubic-bezier(0.55, 0.1, 0.45, 0.9) infinite reverse; }
+.ld-rings span:nth-child(3) { inset: 29%; border-top-color: var(--muted); animation: ld-spin 3.4s linear infinite; }
+.ld-rings i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px; background: var(--gold); transform: rotate(45deg); animation: ld-blink 2.6s ease-in-out infinite; }
+@keyframes ld-spin { to { transform: rotate(360deg); } }
+@keyframes ld-blink { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+.xur-anim { display: grid; justify-items: center; gap: 1.25rem; }
 .loader-bar { width: 220px; height: 3px; background: var(--line); overflow: hidden; }
 .loader-bar i { display: block; height: 100%; width: 0; background: var(--gold); animation: bar-fill 9s cubic-bezier(0.1, 0.7, 0.2, 1) forwards; transition: width 0.3s ease-out; }
 @keyframes bar-fill { to { width: 92%; } }
-.loader.failed .tris, .loader.failed .loader-bar { display: none; }
+.loader.failed .ld-engram, .loader.failed .ld-rings, .loader.failed .loader-bar { display: none; }
 .loader.failed p { color: var(--soft); }
-@media (prefers-reduced-motion: reduce) { .tris i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ld-engram *, .ld-rings *, .loader-bar i { animation: none !important; } .ld-engram .shell { stroke-dashoffset: 0; } }
 
 /* Anything switched off with the hidden attribute stays off, whatever its layout */
 [hidden] { display: none !important; }

@@ -14,7 +14,15 @@
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
-  function status(html) { $('#xur-msg').hidden = false; $('#xur').hidden = true; $('#xur-status').innerHTML = html; }
+  // busy: show the loading animation; otherwise it's a plain message
+  function status(html, busy = false) {
+    const el = $('#xur-msg');
+    el.hidden = false;
+    el.className = busy ? 'loader' : 'signin';
+    el.querySelector('.xur-anim').hidden = !busy;
+    $('#xur').hidden = true;
+    $('#xur-status').innerHTML = html;
+  }
 
   // ---------- Sign-in (shared with the inventory page) ----------
 
@@ -246,7 +254,7 @@
 
       let stock = null;
       if (configured && getToken()) {
-        status('Checking Xûr\'s inventory on your account…');
+        status('Checking Xûr\'s inventory on your account…', true);
         stock = await fromAccount().catch(() => null);
       }
       stock ||= await fromPublic();

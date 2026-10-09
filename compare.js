@@ -44,6 +44,7 @@
   async function update() {
     writeHash();
     await loadWeapons();
+    $('#rank-load').hidden = true;
     render();
   }
 
@@ -240,6 +241,7 @@
       state.index = await res.json();
     } catch {
       $('#cmp-table').innerHTML = '<p class="muted">Weapon data is missing. Run the "Update roll data" workflow.</p>';
+      $('#rank-load').hidden = true;
       return;
     }
     state.index.forEach(w => state.byId.set(w.id, w));
