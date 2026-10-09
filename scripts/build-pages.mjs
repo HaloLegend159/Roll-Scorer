@@ -80,7 +80,7 @@ function summary(w, entry, index) {
     ? `No curators have posted rolls for ${esc(w.name)} yet, so these picks are estimated from ${w.estimated.rolls?.toLocaleString?.('en-US') || 'the'} recommended rolls on ${esc(w.estimated.basis || 'similar weapons')}.`
     : `Based on ${(w.modes?.all?.rolls?.length || 0).toLocaleString('en-US')} rolls recommended by the Destiny 2 community.`;
   parts.push(`<h1>${esc(w.name)} god roll</h1>`,
-    `<p>${esc(what)}. ${basis} Pick the perks on your copy above to score it out of 100.</p>`);
+    `<p>${esc(what)}. ${basis} </p>`);
 
   const cards = [['pve', 'PvE'], ['pvp', 'PvP']].map(([m, label]) => {
     const best = bestRoll(m);
@@ -90,37 +90,6 @@ function summary(w, entry, index) {
       `<dl>${tops.map(([l, ps]) => `<dt>${esc(l)}</dt><dd>${ps.map(esc).join(', ')}</dd>`).join('')}</dl></div>`;
   }).filter(Boolean);
   if (cards.length) parts.push(`<div class="about-grid">${cards.join('')}</div>`);
-
-  // Trait pairs the community recommends most
-  if (traitCols.length >= 2) {
-    const pairs = new Map();
-    const rolls = w.modes?.all?.rolls || [];
-    for (const r of rolls) {
-      const a = r.find(i => map[i]?.[0] === traitCols[0]), b = r.find(i => map[i]?.[0] === traitCols[1]);
-      if (a === undefined || b === undefined) continue;
-      const k = `${name(a)} + ${name(b)}`;
-      pairs.set(k, (pairs.get(k) || 0) + 1);
-    }
-    const top = [...pairs.entries()].sort((x, y) => y[1] - x[1]).slice(0, 5);
-    if (top.length) parts.push(`<h2>Best trait combos on ${esc(w.name)}</h2><ul>${top.map(([k, n]) => `<li>${esc(k)} <span class="muted">(${n} rolls)</span></li>`).join('')}</ul>`);
-  }
-
-  // How to get it
-  const clean = (list, f) => [...new Set((list || []).map(f).filter(Boolean))];
-  const acts = clean(w.activities, s => s.replace(/:\s*(customi[sz]e|matchmade|normal|standard|expert|master|legend|grandmaster|heroic)\s*$/i, '').trim());
-  const vends = clean(w.vendors, s => s.replace(/^weekly:\s*/i, '').trim());
-  const how = [
-    acts.length && `Drops in ${acts.join(', ')}.`,
-    vends.length && `Vendors: ${vends.join(', ')}.`,
-    w.craftable && 'Craftable once you unlock its pattern.',
-    (w.sources || []).length && `Originally from ${w.sources.join(', ')}.`,
-  ].filter(Boolean);
-  if (how.length) parts.push(`<h2>How to get ${esc(w.name)}</h2><p>${how.map(esc).join(' ')}</p>`);
-
-  // What curators say, trimmed
-  const notes = (w.notes || []).slice(0, 2).map(n => String(n).replace(/\s+/g, ' ').trim()).filter(Boolean)
-    .map(n => (n.length > 320 ? n.slice(0, 317).replace(/\s+\S*$/, '') + '…' : n));
-  if (notes.length) parts.push(`<h2>What curators say</h2>${notes.map(n => `<blockquote><p>${esc(n)}</p></blockquote>`).join('')}`);
 
   // Similar guns with the most recommended rolls. (Not usage: that shifts daily and would rewrite every page.)
   const peers = index.filter(x => x.type === w.type && x.id !== w.id && x.n)
