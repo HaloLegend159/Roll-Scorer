@@ -44,7 +44,6 @@
   async function update() {
     writeHash();
     await loadWeapons();
-    $('#rank-load').hidden = true;
     render();
   }
 
@@ -252,6 +251,7 @@
     $('#r-type').innerHTML = types.map(t => `<option ${t === state.type ? 'selected' : ''}>${esc(t)}</option>`).join('');
 
     await loadWeapons();
+    $('#rank-load').hidden = true;
     render();
   }
 

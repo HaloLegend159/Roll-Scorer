@@ -633,3 +633,23 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 
 /* Anything switched off with the hidden attribute stays off, whatever its layout */
 [hidden] { display: none !important; }
+
+/* Loader on Xûr: the outer hexagons light one by one going round and stay lit,
+   then the middle lights, and they all fade out together */
+.ld-comb { width: 96px; height: 90px; }
+.ld-comb polygon { fill: transparent; stroke: rgba(255, 255, 255, 0.18); stroke-width: 1.4; stroke-linejoin: round; }
+.ld-comb .r0 { animation: comb-0 3.2s ease-in-out infinite; }
+.ld-comb .r1 { animation: comb-1 3.2s ease-in-out infinite; }
+.ld-comb .r2 { animation: comb-2 3.2s ease-in-out infinite; }
+.ld-comb .r3 { animation: comb-3 3.2s ease-in-out infinite; }
+.ld-comb .r4 { animation: comb-4 3.2s ease-in-out infinite; }
+.ld-comb .r5 { animation: comb-5 3.2s ease-in-out infinite; }
+.ld-comb .c { animation: comb-c 3.2s ease-in-out infinite; }
+@keyframes comb-0 { 0% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 4.69%, 76.56% { fill: rgba(233, 180, 76, 0.32); stroke: var(--gold); } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
+@keyframes comb-1 { 0%, 7.81% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 12.50%, 76.56% { fill: rgba(233, 180, 76, 0.32); stroke: var(--gold); } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
+@keyframes comb-2 { 0%, 15.62% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 20.31%, 76.56% { fill: rgba(233, 180, 76, 0.32); stroke: var(--gold); } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
+@keyframes comb-3 { 0%, 23.44% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 28.12%, 76.56% { fill: rgba(233, 180, 76, 0.32); stroke: var(--gold); } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
+@keyframes comb-4 { 0%, 31.25% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 35.94%, 76.56% { fill: rgba(233, 180, 76, 0.32); stroke: var(--gold); } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
+@keyframes comb-5 { 0%, 39.06% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 43.75%, 76.56% { fill: rgba(233, 180, 76, 0.32); stroke: var(--gold); } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
+@keyframes comb-c { 0%, 51.56% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 57.81% { fill: rgba(244, 199, 102, 0.9); stroke: #f4c766; } 76.56% { fill: rgba(233, 180, 76, 0.75); stroke: #f4c766; } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
+@media (prefers-reduced-motion: reduce) { .ld-comb polygon { animation: none !important; } }
