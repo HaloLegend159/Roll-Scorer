@@ -573,3 +573,19 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
   border: 1px solid var(--line);
 }
 .hero p { max-width: 36rem; }
+
+/* Site name in the logo's blue */
+.brand, a.brand { color: #4aa3f8; }
+
+/* Score: white number, the grade as a solid tag in its color, neutral bars */
+.score { border-top: 3px solid var(--grade, var(--line-strong)); }
+.score .num { color: var(--text); font-weight: 600; }
+.score .num small { color: var(--muted); font-weight: 500; }
+.score .grade {
+  display: inline-block; margin-top: 0.6rem; padding: 0.3rem 0.7rem;
+  background: var(--grade, var(--panel-2)); color: #0e0f11;
+  font-size: 1rem; letter-spacing: 0.1em; line-height: 1.2;
+}
+.bars .fill, .bars .fill.max { background: var(--soft); }
+.inv-score .num { color: var(--text); font-weight: 600; }
+.inv-score .grade { margin-top: 0.3rem; padding: 0.1rem 0.45rem; background: var(--grade, var(--panel-2)); color: #0e0f11; font-size: 0.8rem; letter-spacing: 0.08em; }
