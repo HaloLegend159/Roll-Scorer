@@ -186,7 +186,7 @@
     };
     const shardOnly = $('#a-shard').checked, noExotic = $('#a-exotic').checked;
     const shardCount = state.items.filter(x => x.beatenBy).length;
-    $('#a-shard-label').textContent = `Shard candidates only (${shardCount})`;
+    $('#a-shard-label').textContent = `Shard it only (${shardCount})`;
 
     const rows = state.items.filter(x =>
       (!term || x.name.toLowerCase().includes(term)) &&
@@ -224,7 +224,7 @@
     const badges = [
       x.tier !== null ? `<span class="badge tier">Tier ${x.tier}</span>` : '',
       x.exotic ? '<span class="badge good">Exotic</span>' : '',
-      x.beatenBy ? '<span class="badge craft">Shard candidate</span>' : '',
+      x.beatenBy ? '<span class="badge craft">Shard it</span>' : '',
     ].join(' ');
     const cells = A.stats.map((s, i) =>
       `<span class="st${state.picks.includes(i) ? ' on' : ''}"><small>${esc(s.n)}</small>${x.stats[i]}</span>`).join('');

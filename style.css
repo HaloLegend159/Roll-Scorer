@@ -90,6 +90,8 @@ main { flex: 1; width: 100%; max-width: var(--wide); margin: 0 auto; padding: 1.
 .weapon-head {
   display: flex; align-items: center; gap: 0.5rem 1rem; flex-wrap: wrap;
   padding: 1.25rem var(--pad); border-bottom: 1px solid var(--line);
+  min-height: 104px;
+  background: linear-gradient(90deg, var(--panel) 32%, rgba(21, 23, 25, 0.78) 58%, rgba(21, 23, 25, 0.35)), var(--shot, none) right center / cover no-repeat;
   box-shadow: inset 3px 0 0 var(--tier, var(--legendary));
 }
 #weapon[data-tier="exotic"] { --tier: var(--exotic); }
@@ -512,3 +514,14 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
   .ar-row { grid-template-columns: 44px minmax(0, 1fr) auto; }
   .ar-stats { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 }
+
+/* Home: most used gun of each type */
+.by-type { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0 2rem; }
+.by-type li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid var(--line); }
+.by-type span { color: var(--muted); font-size: 0.9rem; }
+.by-type a { color: var(--text); text-decoration: none; font-weight: 500; text-align: right; }
+.by-type a:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* What's new */
+.changes h2 { font-size: 1rem; margin: 1.75rem 0 0.4rem; }
+.changes h2 time { color: var(--muted); font-weight: 400; margin-left: 0.5rem; font-size: 0.9rem; }
+.weapon-head .modes { background: rgba(14, 15, 17, 0.8); }

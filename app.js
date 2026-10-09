@@ -47,6 +47,16 @@
       `<span><span class="pn">${esc(w.name)}</span><br><span class="pt">${esc(w.type)}</span></span>` +
       `<span class="pr">#${i + 1}</span></a></li>`).join('');
     $('#popular').hidden = false;
+
+    // The most used gun of each weapon type
+    const best = new Map();
+    for (const w of state.index) if (w.u?.[0] && (!best.has(w.type) || w.u[0] > best.get(w.type).u[0])) best.set(w.type, w);
+    const types = [...best.keys()].sort();
+    $('#type-list').innerHTML = types.map(t => {
+      const w = best.get(t);
+      return `<li><span>${esc(t)}</span><a href="/w/${encodeURIComponent(w.id)}/">${esc(w.name)}</a></li>`;
+    }).join('');
+    $('#by-type').hidden = !types.length;
   }
 
   async function loadWeapon(id, picksFromUrl, availFromUrl) {
@@ -73,6 +83,8 @@
     $('#weapon').hidden = false;
     $('#w-icon').src = w.icon ? BUNGIE + w.icon : '';
     $('#w-icon').hidden = !w.icon;
+    // The gun's in-game screenshot behind its name
+    $('.weapon-head').style.setProperty('--shot', w.screenshot ? `url("${BUNGIE + w.screenshot}")` : 'none');
     $('#w-name').innerHTML = esc(w.name) + (window.RollFavs ? ' ' + RollFavs.button(w.id, w.name) : '');
     document.title = `${w.name} · D2 Roll Check`;
     render();
@@ -502,7 +514,7 @@
       `<p class="why">${why}${missing ? ` ${missing} column${missing > 1 ? 's' : ''} still empty.` : ''}</p>` +
       usageSummary(r) +
       `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + bestPossibleHtml(r.total) + closest +
-      `<p class="caveat">Scores reflect community picks. Some top rolls are built for a specific subclass or playstyle, so check the curator notes before you shard anything.</p>`;
+      '';
     wireBestPossible();
   }
 
@@ -647,7 +659,7 @@
       return `<li><span class="sname">${esc(d.name)}</span>${bar}<span class="sval">${now[i]}</span>${change}</li>`;
     }).join('');
     el.innerHTML = `<h3>Stats${anyPick ? ' with these perks' : ''}</h3><ul>${rows}</ul>` +
-      `<p class="small muted">${anyPick ? 'Changes are compared with the bare weapon.' : 'Pick perks to see how they change these.'} Masterworks, mods and conditional bonuses aren't included.</p>`;
+      `<p class="small muted">${anyPick ? 'Changes vs. the bare weapon. ' : ''}No mods or masterwork.</p>`;
   }
 
   // "Range +10, Handling −5" for the perk details box
@@ -734,7 +746,7 @@
     el.innerHTML = `<h3>Usage over time</h3>` +
       (takeaway ? `<p class="takeaway">${takeaway}</p>` : '') +
       `<div class="chart">${svg}<div class="ttip" hidden></div></div>` +
-      `<p class="small muted">Share is this gun's copies out of every weapon seen in sampled matches. It only moves when players switch guns, not when more or fewer people are playing.` +
+      `<p class="small muted">Share of all weapons seen in sampled matches.` +
       `${seen < 30 ? ` Only ${seen} copies seen so far, so treat this as rough.` : ''}</p>` + table;
 
     // Hover: crosshair and a tooltip with that day's numbers

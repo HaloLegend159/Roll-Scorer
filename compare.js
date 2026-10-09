@@ -118,7 +118,7 @@
       `<a href="./#/${encodeURIComponent(w.id)}/${state.mode}/${picks ? picks.map(p => (p === null ? '_' : p)).join('-') : ''}">Open this roll in the scorer</a>`)));
 
     el.innerHTML = `<div class="cmp-scroll"><table class="cmp"><thead><tr><td></td>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>` +
-      (names.length ? '<p class="small muted">Bold marks the highest number in a row. Higher isn\'t better for every stat (charge time and draw time, for example). Stats leave out masterworks and mods.</p>' : '');
+      (names.length ? '<p class="small muted">Bold is the highest in each row. Higher isn\'t always better (charge and draw time). No mods or masterworks.</p>' : '');
     el.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => remove(b.dataset.remove)));
   }
 
@@ -128,7 +128,7 @@
     $('#fav-quick').innerHTML = favs.length
       ? `<span class="muted small">Your favorites:</span> ${favs.map(w =>
           `<button class="combo" data-add="${w.id}" ${state.ids.includes(w.id) || full ? 'disabled' : ''}>${esc(w.name)}</button>`).join('')}`
-      : '<span class="muted small">Tap the ☆ next to any weapon to save it as a favorite. Favorites show up here and as a filter in My inventory.</span>';
+      : '<span class="muted small">Tap ☆ on any weapon to save it here.</span>';
     $('#fav-quick').querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => add(b.dataset.add)));
   }
 
