@@ -598,21 +598,31 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .fav { display: inline-flex; align-items: center; vertical-align: middle; }
 .fav svg { width: 0.85em; height: 0.85em; }
 
-/* Loading placeholders */
-@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
-.skel span, .skel-panel span, .pop .skel-card {
-  display: block; border-radius: 2px;
-  background: linear-gradient(90deg, var(--panel) 0%, var(--panel-2) 50%, var(--panel) 100%);
-  background-size: 200% 100%; animation: shimmer 1.4s linear infinite;
+/* Loader: four upside-down triangles that ease backwards, then swing all the way round, one after another */
+.loader { min-height: 60vh; display: grid; place-content: center; justify-items: center; gap: 1.25rem; text-align: center; }
+.loader-sm { min-height: 12rem; }
+.loader p { margin: 0; color: var(--muted); font-size: 0.9rem; max-width: 32rem; }
+.tris { display: flex; gap: 14px; }
+.tris i {
+  display: block; width: 22px; height: 19px; background: var(--text);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: 50% 33.3%; /* spin around the triangle's centre */
+  animation: tri-turn 3s infinite;
 }
-.skel { display: grid; gap: 0.5rem; margin-top: 1rem; }
-.skel span { height: 64px; }
-.pop .skel-card { height: 68px; border: 1px solid var(--line); }
-.skel-panel { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 1.5rem; }
-.skel-panel span:first-child { height: 560px; }
-.skel-panel span:last-child { height: 380px; }
-@media (max-width: 860px) { .skel-panel { grid-template-columns: minmax(0, 1fr); } .skel-panel span:last-child { display: none; } }
-@media (prefers-reduced-motion: reduce) { .skel span, .skel-panel span, .pop .skel-card { animation: none; } }
+.tris i:nth-child(2) { animation-delay: 0.2s; }
+.tris i:nth-child(3) { animation-delay: 0.4s; }
+.tris i:nth-child(4) { animation-delay: 0.6s; }
+@keyframes tri-turn {
+  0% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); }
+  32% { transform: rotate(-55deg); animation-timing-function: cubic-bezier(0.7, 0, 0.2, 1); }
+  80%, 100% { transform: rotate(360deg); }
+}
+.loader-bar { width: 220px; height: 3px; background: var(--line); overflow: hidden; }
+.loader-bar i { display: block; height: 100%; width: 0; background: var(--gold); animation: bar-fill 9s cubic-bezier(0.1, 0.7, 0.2, 1) forwards; transition: width 0.3s ease-out; }
+@keyframes bar-fill { to { width: 92%; } }
+.loader.failed .tris, .loader.failed .loader-bar { display: none; }
+.loader.failed p { color: var(--soft); }
+@media (prefers-reduced-motion: reduce) { .tris i { animation: none; } }
 
 /* Anything switched off with the hidden attribute stays off, whatever its layout */
 [hidden] { display: none !important; }

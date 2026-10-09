@@ -16,7 +16,8 @@
   const configured = CFG.bungieApiKey && CFG.bungieClientId && !/PASTE/.test(CFG.bungieApiKey + CFG.bungieClientId);
 
   function show(id) { ['signed-out', 'setup', 'loading', 'inv'].forEach(x => { $('#' + x).hidden = x !== id; }); }
-  function loading(msg) { show('loading'); $('#load-msg').textContent = msg; }
+  function loading(msg) { show('loading'); $('#loading').classList.remove('failed'); $('#load-msg').textContent = msg; }
+  function fail(msg) { loading(msg); $('#loading').classList.add('failed'); }
 
   // ---------- Sign in (finished on the My inventory page, which sends people back here) ----------
 
@@ -287,13 +288,13 @@
     try { await load(); }
     catch (err) {
       if (err instanceof AuthError) { show('signed-out'); return; }
-      loading(err.message || String(err));
+      fail(err.message || String(err));
     }
   }
 
   $('#signin').addEventListener('click', signIn);
   $('#signout').addEventListener('click', () => { clearToken(); show('signed-out'); });
-  $('#refresh').addEventListener('click', () => load().catch(err => loading(err.message || String(err))));
+  $('#refresh').addEventListener('click', () => load().catch(err => fail(err.message || String(err))));
   ['#a-name', '#a-class', '#a-slot', '#a-set', '#a-arch', '#a-tier', '#a-sort', '#a-shard', '#a-exotic']
     .forEach(sel => $(sel).addEventListener(sel === '#a-name' ? 'input' : 'change', render));
   start();

@@ -26,6 +26,7 @@
       renderHome();
     } catch {
       $('#popular').hidden = true;
+      $('#home-load').hidden = true;
       $('#status').textContent =
         'No weapon data yet. Open the repo\'s Actions tab, run "Update roll data", then reload this page.';
       return;
@@ -47,6 +48,7 @@
       (w.icon ? `<img src="${BUNGIE + w.icon}" alt="" loading="lazy" width="44" height="44">` : '<span></span>') +
       `<span><span class="pn">${esc(w.name)}</span><br><span class="pt">${esc(w.type)}</span></span>` +
       `<span class="pr">#${i + 1}</span></a></li>`).join('');
+    $('#home-load').hidden = true;
     $('#popular').hidden = false;
 
     // The most used gun of each weapon type

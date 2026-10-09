@@ -22,7 +22,16 @@
   function show(id) {
     ['signed-out', 'setup', 'loading', 'inv'].forEach(x => { $('#' + x).hidden = x !== id; });
   }
-  function loading(msg) { show('loading'); $('#load-msg').textContent = msg; }
+  function loading(msg) {
+    show('loading');
+    $('#loading').classList.remove('failed');
+    $('#load-msg').textContent = msg;
+  }
+  // Fill the loading bar by real progress (0 to 1)
+  function progress(p) {
+    const i = $('#loading .loader-bar i');
+    if (i) { i.style.animation = 'none'; i.style.width = `${Math.round(Math.min(1, p) * 100)}%`; }
+  }
 
   // ---------- Sign in (Bungie OAuth, public client) ----------
 
@@ -117,6 +126,7 @@
         } catch {}
         done++;
         $('#load-msg').textContent = `Loading weapon data… ${done} of ${ids.size}`;
+        progress(done / ids.size);
       }
     };
     await Promise.all(Array.from({ length: 8 }, worker));
@@ -413,6 +423,7 @@
     if (err instanceof AuthError && justSignedIn) {
       justSignedIn = false;
       show('loading');
+      $('#loading').classList.add('failed');
       $('#load-msg').innerHTML = `${esc(err.message)}<br><br>This usually means the API key in <code>config.js</code> ` +
         `comes from a different Bungie app than the client ID. Both must come from the same app. ` +
         `<button class="ghost" id="retry">Back to sign in</button>`;
@@ -425,7 +436,8 @@
       return;
     }
     show('loading');
-    $('#load-msg').innerHTML = `${esc(err.message || err)} <button class="ghost" id="retry">Try again</button>`;
+    $('#loading').classList.add('failed');
+      $('#load-msg').innerHTML = `${esc(err.message || err)} <button class="ghost" id="retry">Try again</button>`;
     $('#retry').addEventListener('click', () => start());
   }
 
