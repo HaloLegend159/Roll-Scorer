@@ -276,7 +276,7 @@
       $('#xur-sub').textContent = stock.source === 'account'
         ? (anyHidden
           ? `${count}. Bungie didn't send the perks for ${state.items.every(i => !i.known) ? 'these' : 'some of these'}, so each one shows the perks to look for. Check the roll in-game before buying.`
-          : `${count}, with the exact rolls your character sees.`)
+          : '')
         : `${count}.${anyHidden ? ' Bungie only shares the exact rolls with signed-in players.' : ''}`;
       $('#xur-signin').hidden = !(configured && stock.source !== 'account' && anyHidden);
       $('#xur-msg').hidden = true;

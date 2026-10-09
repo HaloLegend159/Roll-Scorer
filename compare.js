@@ -128,7 +128,7 @@
     $('#fav-quick').innerHTML = favs.length
       ? `<span class="muted small">Your favorites:</span> ${favs.map(w =>
           `<button class="combo" data-add="${w.id}" ${state.ids.includes(w.id) || full ? 'disabled' : ''}>${esc(w.name)}</button>`).join('')}`
-      : '<span class="muted small">Tap the star on any weapon to save it here.</span>';
+      : '';
     $('#fav-quick').querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => add(b.dataset.add)));
   }
 
