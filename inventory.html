@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My inventory · D2 Roll Check</title>
-  <meta name="description" content="Sign in with Bungie to score every weapon in your Destiny 2 vault and find what to keep or shard.">
+  <meta name="description" content="Sign in with Bungie to score every weapon in your Destiny 2 vault and find what to keep or dismantle.">
   <link rel="canonical" href="https://d2rollcheck.com/inventory.html">
   <link rel="icon" href="icon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="D2 Roll Check">
   <meta property="og:title" content="My inventory · D2 Roll Check">
-  <meta property="og:description" content="Sign in with Bungie to score every weapon in your Destiny 2 vault and find what to keep or shard.">
+  <meta property="og:description" content="Sign in with Bungie to score every weapon in your Destiny 2 vault and find what to keep or dismantle.">
   <meta property="og:url" content="https://d2rollcheck.com/inventory.html">
   <meta property="og:image" content="https://d2rollcheck.com/og.png">
   <meta property="og:image:width" content="1200">
@@ -45,7 +45,7 @@
   <main id="app">
     <section id="signed-out" class="signin" hidden>
       <h2>Score your whole vault</h2>
-      <p>Sign in with your Bungie account and every weapon on your characters and in your vault gets scored at once. Sort by score, find your best copy of each gun, and see what's safe to shard.</p>
+      <p>Sign in with your Bungie account and every weapon on your characters and in your vault gets scored at once. Sort by score, find your best copy of each gun, and see what's safe to dismantle.</p>
       <button id="signin" class="primary">Sign in with Bungie</button>
       <p class="muted small" id="access-note">Read-only. The site can see your inventory but can't move, equip, or delete anything. Your login stays in this browser and is never sent anywhere except Bungie. Bungie logs you out of this site after about an hour.</p>
     </section>
@@ -90,15 +90,15 @@
           </select>
         </label>
         <label class="check"><input id="f-dupes" type="checkbox"> Duplicates only</label>
-        <label class="check"><input id="f-shard" type="checkbox"> Shard candidates</label>
+        <label class="check"><input id="f-shard" type="checkbox"> <span id="f-shard-label">To dismantle</span></label>
         <label class="check"><input id="f-post" type="checkbox"> <span id="f-post-label">Postmaster only</span></label>
         <label class="check"><input id="f-fav" type="checkbox"> <span id="f-fav-label">Favorites only</span></label>
       </div>
 
-      <p id="summary" class="muted"></p>
+      <div id="summary" class="inv-stats"></div>
       <p id="apply-msg" class="apply-msg" role="status" hidden></p>
       <ul id="list" class="inv-list"></ul>
-      <p class="caveat-line muted">Some top rolls only shine in one build. Check a gun's notes before you shard it.</p>
+      <p class="caveat-line muted">Some top rolls only shine in one build. Check a gun's notes before you dismantle it.</p>
     </section>
   </main>
 

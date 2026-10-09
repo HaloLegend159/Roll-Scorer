@@ -653,3 +653,13 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 @keyframes comb-5 { 0%, 39.06% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 43.75%, 76.56% { fill: rgba(233, 180, 76, 0.32); stroke: var(--gold); } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
 @keyframes comb-c { 0%, 51.56% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } 57.81% { fill: rgba(244, 199, 102, 0.9); stroke: #f4c766; } 76.56% { fill: rgba(233, 180, 76, 0.75); stroke: #f4c766; } 92.19%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.18); } }
 @media (prefers-reduced-motion: reduce) { .ld-comb polygon { animation: none !important; } }
+
+/* My inventory summary: three counts instead of a sentence */
+.inv-stats { display: flex; flex-wrap: wrap; gap: 0.5rem 2.5rem; margin: 0.25rem 0 1.25rem; }
+.inv-stats span { display: grid; font-family: var(--display); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.inv-stats b { font-family: var(--display); font-weight: 600; font-size: 2rem; line-height: 1.1; letter-spacing: 0; color: var(--text); }
+.inv-stats b small { font-size: 1rem; color: var(--muted); }
+.inv-stats b.gold { color: var(--gold); }
+
+/* Compare: hide the rankings loader as soon as the list has rows, even if the script did not */
+#rank-load:has(+ #rank-list > li) { display: none !important; }

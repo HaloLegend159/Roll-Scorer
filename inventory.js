@@ -319,9 +319,13 @@
     }[sort]);
 
     const shardCount = state.items.filter(isShard).length;
-    const hasMulti = rows.some(x => x.options.some(o => o.length > 1));
-    $('#summary').textContent = `Showing ${rows.length} of ${state.items.length} weapons · ${shardCount} shard candidate${shardCount === 1 ? '' : 's'}` +
-      (hasMulti ? ' · Scores are the best each gun can reach with its own perks; bold perks are the ones to use' : '');
+    const godCount = state.items.filter(x => x.scores[state.mode].total === 100).length;
+    $('#f-shard-label').textContent = `To dismantle (${shardCount})`;
+    const filtered = rows.length !== state.items.length;
+    $('#summary').innerHTML =
+      `<span><b>${filtered ? `${rows.length}<small> / ${state.items.length}</small>` : state.items.length}</b>weapons</span>` +
+      `<span><b class="gold">${godCount}</b>god rolls</span>` +
+      `<span><b>${shardCount}</b>to dismantle</span>`;
 
     $('#list').innerHTML = rows.map(rowHtml).join('') ||
       '<li class="inv-empty">No weapons match these filters.</li>';

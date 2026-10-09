@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Score number options</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@200;300;500&family=Barlow+Semi+Condensed:wght@600;700&family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans:wght@400;500&family=Rajdhani:wght@500;600&family=Big+Shoulders+Display:wght@300;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0e0f11; --panel: #151719; --panel-2: #1c1e21; --line: rgba(255,255,255,.09); --line-strong: rgba(255,255,255,.18); --text: #ededee; --soft: #c4c6ca; --muted: #8d9096; --gold: #e9b44c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', system-ui, sans-serif; padding: 32px 16px 48px; }
+  h1 { font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 1.6rem; margin: 0 0 4px; text-align: center; }
+  .sub { text-align: center; color: var(--muted); margin: 0 0 28px; font-size: .95rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; max-width: 1200px; margin: 0 auto; }
+  .opt { background: var(--panel); border: 1px solid var(--line); border-radius: 2px; padding: 20px 22px 22px; }
+  .opt h2 { font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: 1rem; margin: 0 0 2px; }
+  .opt .why { color: var(--muted); font-size: .85rem; margin: 0 0 16px; }
+  .score { border-top: 3px solid var(--gold); background: var(--bg); padding: 18px 20px; }
+  .num { margin: 0; line-height: 1; font-variant-numeric: tabular-nums; }
+  .num small { color: var(--muted); }
+  .tag { display: inline-block; margin-top: 10px; padding: 4px 10px; background: var(--gold); color: #0e0f11; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-size: .95rem; }
+  .bars { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: .85rem; }
+  .bars li { display: flex; justify-content: space-between; border-bottom: 3px solid var(--soft); padding-bottom: 4px; }
+  .stats { display: flex; gap: 28px; margin-top: 18px; }
+  .stats span { display: grid; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .stats b { line-height: 1.1; color: var(--text); font-weight: inherit; }
+  .stats b.gold { color: var(--gold); }
+  .row { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; background: var(--panel-2); padding: 10px 14px; font-size: .9rem; }
+  .row .n { line-height: 1; }
+
+  /* 1: current */
+  .f1 .num, .f1 .stats b, .f1 .row .n, .f1 .bars b { font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 600; }
+  .f1 .num { font-size: 104px; } .f1 .num small { font-size: 28px; } .f1 .stats b { font-size: 30px; } .f1 .row .n { font-size: 30px; }
+  /* 2: thin, wide, like Destiny's Power level */
+  .f2 .num, .f2 .stats b, .f2 .row .n, .f2 .bars b { font-family: 'Barlow', sans-serif; font-weight: 200; }
+  .f2 .num { font-size: 108px; letter-spacing: -.02em; } .f2 .num small { font-size: 26px; font-weight: 300; } .f2 .stats b { font-size: 32px; font-weight: 300; } .f2 .row .n { font-size: 32px; font-weight: 300; }
+  .f2 .num::before { content: '◆'; font-size: 22px; color: var(--gold); vertical-align: 60%; margin-right: 8px; }
+  /* 3: Rajdhani, squared sci-fi digits */
+  .f3 .num, .f3 .stats b, .f3 .row .n, .f3 .bars b { font-family: 'Rajdhani', sans-serif; font-weight: 600; }
+  .f3 .num { font-size: 110px; } .f3 .num small { font-size: 28px; } .f3 .stats b { font-size: 32px; } .f3 .row .n { font-size: 32px; }
+  /* 4: Chakra Petch, angular cut corners */
+  .f4 .num, .f4 .stats b, .f4 .row .n, .f4 .bars b { font-family: 'Chakra Petch', sans-serif; font-weight: 500; }
+  .f4 .num { font-size: 96px; } .f4 .num small { font-size: 24px; } .f4 .stats b { font-size: 28px; } .f4 .row .n { font-size: 28px; }
+  /* 5: IBM Plex Mono, light, data readout */
+  .f5 .num, .f5 .stats b, .f5 .row .n, .f5 .bars b { font-family: 'IBM Plex Mono', monospace; font-weight: 300; }
+  .f5 .num { font-size: 92px; letter-spacing: -.04em; } .f5 .num small { font-size: 22px; } .f5 .stats b { font-size: 26px; } .f5 .row .n { font-size: 26px; }
+  /* 6: Big Shoulders Display, tall and condensed, light */
+  .f6 .num, .f6 .stats b, .f6 .row .n, .f6 .bars b { font-family: 'Big Shoulders Display', sans-serif; font-weight: 300; }
+  .f6 .num { font-size: 124px; } .f6 .num small { font-size: 30px; } .f6 .stats b { font-size: 36px; } .f6 .row .n { font-size: 36px; }
+</style>
+</head>
+<body>
+  <h1>Score number options</h1>
+  <p class="sub">Same score panel, inventory counts and list score in six number styles. Only the numbers change.</p>
+  <div class="grid" id="grid"></div>
+<script>
+const opts = [
+  ['f1', '1 · Current', 'Barlow Semi Condensed, what the site uses now.'],
+  ['f2', '2 · Power level', 'Thin, wide Barlow with a small gold diamond, like the Power number in Destiny.'],
+  ['f3', '3 · Rajdhani', 'Squared-off sci-fi digits, still easy to read.'],
+  ['f4', '4 · Chakra Petch', 'Angular digits with cut corners, very "terminal".'],
+  ['f5', '5 · Readout', 'Light IBM Plex Mono, like a data readout or stat screen.'],
+  ['f6', '6 · Tall and light', 'Big Shoulders Display: tall, condensed and thin.'],
+];
+document.getElementById('grid').innerHTML = opts.map(([c, t, w]) => `
+  <section class="opt ${c}">
+    <h2>${t}</h2><p class="why">${w}</p>
+    <div class="score">
+      <p class="num">100<small>/100</small></p>
+      <span class="tag">God roll</span>
+      <ul class="bars"><li><span>Trait: Rewind Rounds</span><b>100</b></li><li><span>Trait: Elemental Honing</span><b>100</b></li></ul>
+    </div>
+    <div class="stats"><span><b>538</b>weapons</span><span><b class="gold">14</b>god rolls</span><span><b>202</b>to dismantle</span></div>
+    <div class="row"><span>Mint Retrograde · Pulse Rifle</span><span class="n">94</span></div>
+  </section>`).join('');
+</script>
+</body>
+</html>

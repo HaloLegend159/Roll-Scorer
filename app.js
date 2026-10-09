@@ -274,11 +274,12 @@
   }
 
   function grade(n) {
-    if (n >= 90) return ['God roll', 'var(--gold)'];
+    if (n >= 100) return ['God roll', 'var(--gold)'];
+    if (n >= 90) return ['Excellent', '#b08ae0'];
     if (n >= 75) return ['Keeper', '#9ccf7a'];
     if (n >= 55) return ['Solid', 'var(--text)'];
     if (n >= 35) return ['Situational', '#d8a25e'];
-    return ['Shard it', 'var(--bad)'];
+    return ['Dismantle', 'var(--bad)'];
   }
 
   // ---------- Rendering ----------
