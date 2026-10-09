@@ -178,7 +178,7 @@ async function main() {
   }));
 
   // Sitemap
-  const urls = ['/', '/guide.html', '/w/', '/compare.html', '/xur.html', '/inventory.html', '/armor.html', ...index.map(x => `/w/${encodeURIComponent(x.id)}/`)];
+  const urls = ['/', '/guide.html', '/changelog.html', '/w/', '/compare.html', '/xur.html', '/inventory.html', '/armor.html', ...index.map(x => `/w/${encodeURIComponent(x.id)}/`)];
   await put(path.join(ROOT, 'sitemap.xml'),
     '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     urls.map(u => `  <url><loc>${SITE}${u}</loc></url>`).join('\n') + '\n</urlset>\n');
