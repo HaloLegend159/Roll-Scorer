@@ -22,9 +22,10 @@
       const res = await fetch('/data/index.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error(res.status);
       state.index = await res.json();
-      $('#status').textContent = `${state.index.length} weapons to choose from.`;
+      $('#status').textContent = '';
       renderHome();
     } catch {
+      $('#popular').hidden = true;
       $('#status').textContent =
         'No weapon data yet. Open the repo\'s Actions tab, run "Update roll data", then reload this page.';
       return;
@@ -65,8 +66,9 @@
   }
 
   async function loadWeapon(id, picksFromUrl, availFromUrl) {
+    $('#w-skel').hidden = !$('#weapon').hidden; // placeholder until the first weapon shows
     const res = await fetch(`/data/w/${encodeURIComponent(id)}.json`);
-    if (!res.ok) { $('#status').textContent = `Couldn't load that weapon (${res.status}).`; return; }
+    if (!res.ok) { $('#w-skel').hidden = true; $('#status').textContent = `Couldn't load that weapon (${res.status}).`; return; }
     const w = await res.json();
     state.weapon = w;
     state.colOf = [];
@@ -85,6 +87,7 @@
     if (state.avail && !state.avail.some(a => a.length)) state.avail = null;
     state.rs = window.RollScore ? RollScore.prepare(w) : null;
     $('#empty').hidden = true;
+    $('#w-skel').hidden = true;
     $('#weapon').hidden = false;
     $('#w-icon').src = w.icon ? BUNGIE + w.icon : '';
     $('#w-icon').hidden = !w.icon;
@@ -434,25 +437,22 @@
   function usedOn(i) {
     const u = state.weapon.modes[state.mode].usage;
     if (!u || u.n < MIN_USAGE || i === null) return '';
-    return `<small class="used">Players: on ${Math.round((100 * (u.perks[i] || 0)) / u.n)}% of copies</small>`;
+    return ` <small class="used" title="Share of copies seen in matches that run this perk">${Math.round((100 * (u.perks[i] || 0)) / u.n)}% use it</small>`;
   }
 
   function usageSummary(r) {
     if (!r.usageN) return '';
-    const where = `${r.usageN.toLocaleString()} copies of this gun seen in ${modeWord() || 'recent'} matches`;
-    let effect;
-    if (r.usageChange > 0) effect = `Players run these perks a lot, which raised the score by ${r.usageChange}.`;
-    else if (r.usageChange < 0) effect = `Players rarely run these perks, which lowered this estimated score by ${-r.usageChange}.`;
-    else effect = state.weapon.estimated ? 'It didn\'t change this score.'
-      : 'It didn\'t change this score (usage only counts when it helps a gun with curator rolls).';
-    return `<p class="usage-line">Real usage: ${where}. ${effect}</p>`;
+    const where = `${r.usageN.toLocaleString()} copies seen in ${modeWord() || 'recent'} matches.`;
+    const effect = r.usageChange > 0 ? ` Popular with players (+${r.usageChange}).`
+      : r.usageChange < 0 ? ` Rarely used by players (−${-r.usageChange}).` : '';
+    return `<p class="usage-line">${where}${effect}</p>`;
   }
 
   function usageLine(i) {
     const u = state.weapon.modes[state.mode].usage;
     if (!u || u.n < MIN_USAGE) return '';
     const pct = Math.round((100 * (u.perks[i] || 0)) / u.n);
-    return `<p class="stat">On ${pct}% of the ${Math.round(u.n).toLocaleString()} copies seen in ${modeWord() || 'recent'} matches.</p>`;
+    return `<p class="stat">Used on ${pct}% of copies in ${modeWord() || 'recent'} matches.</p>`;
   }
 
   function pairLine(i, s) {
@@ -489,18 +489,19 @@
     const [label, color] = grade(r.total);
     el.style.setProperty('--grade', color);
 
-    const missing = state.picks.filter((p, ci) => p === null && s.colMax[ci]).length;
+    const missingCols = cols.filter((c, ci) => state.picks[ci] === null && s.colMax[ci]).map(c => c.label);
+    const missing = missingCols.length
+      ? ` ${missingCols.length > 1 ? missingCols.slice(0, -1).join(', ') + ' and ' + missingCols.at(-1) : missingCols[0]} not picked.` : '';
     const why = r.matches
-      ? `Matches ${r.matches} recommended roll${r.matches > 1 ? 's' : ''} exactly.`
-      : `${Math.round(r.best * 100)}% of the way to the closest recommended roll.`;
+      ? (r.matches > 1 ? `Matches ${r.matches} recommended rolls.` : 'Matches a recommended roll.')
+      : `${Math.round(r.best * 100)}% match to the nearest recommended roll.`;
 
     const bars = cols.map((col, ci) => {
       const v = r.perCol[ci];
       if (v === null || v === undefined) return '';
       const pct = Math.round(v * 100);
-      const warn = (cs[ci].unpaired
-        ? '<small class="warn">Not paired with your other picks in any recommended roll</small>' : '') + usedOn(state.picks[ci]);
-      return `<li><span>${esc(col.label)}: ${esc(perkByIndex(state.picks[ci]).name)}</span><span>${pct}</span>
+      const warn = cs[ci].unpaired ? '<small class="warn">Never paired with your other picks</small>' : '';
+      return `<li><span>${esc(col.label)}: ${esc(perkByIndex(state.picks[ci]).name)}${usedOn(state.picks[ci])}</span><span>${pct}</span>
         <div class="track"><div class="fill${pct === 100 ? ' max' : ''}" style="width:${pct}%"></div></div>${warn}</li>`;
     }).join('');
 
@@ -516,7 +517,7 @@
     el.innerHTML = estNote +
       `<p class="num">${r.total}<small>/100</small></p>` +
       `<p class="grade">${label}</p>` +
-      `<p class="why">${why}${missing ? ` ${missing} column${missing > 1 ? 's' : ''} still empty.` : ''}</p>` +
+      `<p class="why">${why}${missing}</p>` +
       usageSummary(r) +
       `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + bestPossibleHtml(r.total) + closest +
       '';

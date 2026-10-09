@@ -589,3 +589,30 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .bars .fill, .bars .fill.max { background: var(--soft); }
 .inv-score .num { color: var(--text); font-weight: 600; }
 .inv-score .grade { margin-top: 0.3rem; padding: 0.1rem 0.45rem; background: var(--grade, var(--panel-2)); color: #0e0f11; font-size: 0.8rem; letter-spacing: 0.08em; }
+
+/* Perk usage shown inline next to each perk in the score panel */
+.bars .used { grid-column: auto; display: inline; margin-left: 0.35rem; color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+.score .usage-line { margin: 0 0 1rem; }
+
+/* Favorite star */
+.fav { display: inline-flex; align-items: center; vertical-align: middle; }
+.fav svg { width: 0.85em; height: 0.85em; }
+
+/* Loading placeholders */
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.skel span, .skel-panel span, .pop .skel-card {
+  display: block; border-radius: 2px;
+  background: linear-gradient(90deg, var(--panel) 0%, var(--panel-2) 50%, var(--panel) 100%);
+  background-size: 200% 100%; animation: shimmer 1.4s linear infinite;
+}
+.skel { display: grid; gap: 0.5rem; margin-top: 1rem; }
+.skel span { height: 64px; }
+.pop .skel-card { height: 68px; border: 1px solid var(--line); }
+.skel-panel { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 1.5rem; }
+.skel-panel span:first-child { height: 560px; }
+.skel-panel span:last-child { height: 380px; }
+@media (max-width: 860px) { .skel-panel { grid-template-columns: minmax(0, 1fr); } .skel-panel span:last-child { display: none; } }
+@media (prefers-reduced-motion: reduce) { .skel span, .skel-panel span, .pop .skel-card { animation: none; } }
+
+/* Anything switched off with the hidden attribute stays off, whatever its layout */
+[hidden] { display: none !important; }
