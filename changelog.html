@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What's New · D2 Roll Check</title>
+  <meta name="description" content="Recent updates and new features on D2 Roll Check, the Destiny 2 god roll checker.">
+  <link rel="canonical" href="https://d2rollcheck.com/changelog.html">
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="/icon-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="/icon-96.png" sizes="96x96" type="image/png">
+  <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <meta name="theme-color" content="#0e0f11">
+  <!-- Link preview for Discord, Reddit, iMessage and so on -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="D2 Roll Check">
+  <meta property="og:title" content="What's New · D2 Roll Check">
+  <meta property="og:description" content="Recent updates and new features on D2 Roll Check, the Destiny 2 god roll checker.">
+  <meta property="og:url" content="https://d2rollcheck.com/changelog.html">
+  <meta property="og:image" content="https://d2rollcheck.com/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="D2 Roll Check: Fatebringer scoring 100 out of 100, God roll">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <h1 class="brand"><img src="icon.svg" alt="" width="26" height="26">D2 Roll Check</h1>
+      <nav class="tabs" aria-label="Pages">
+        <a href="./">Score a roll</a>
+        <a href="inventory.html">My inventory</a>
+        <a href="armor.html">Armor</a>
+        <a href="xur.html">Xûr</a>
+        <a href="compare.html">Compare</a>
+        <a href="guide.html">Guide</a>
+      </nav>
+      <a id="tip" class="tip" href="https://ko-fi.com/halolegend159" target="_blank" rel="noopener" hidden>Tip jar</a>
+    </div>
+  </header>
+
+  <main id="app">
+    <article class="about guide changes">
+      <h1>What's new</h1>
+      <p>Found a bug or have an idea? <a href="https://github.com/HaloLegend159/Roll-Scorer/issues" target="_blank" rel="noopener">Open an issue on GitHub</a>.</p>
+
+      <h2>New logo and loading screens <time datetime="2026-10-09">Oct 9, 2026</time></h2>
+      <ul>
+        <li>New logo.</li>
+        <li>New loading animations across the site.</li>
+        <li>Only perfect 100s are god rolls now; 90 to 99 is "Excellent".</li>
+        <li>"Shard" is now "dismantle" everywhere.</li>
+      </ul>
+
+      <h2>Cleaner pages <time datetime="2026-10-08">Oct 8, 2026</time></h2>
+      <ul>
+        <li>Weapon pages show the gun's in-game screenshot.</li>
+        <li>Home page lists the most used gun of each weapon type.</li>
+        <li>Shorter, clearer text across the site.</li>
+      </ul>
+
+      <h2>Armor tab (beta) <time datetime="2026-10-08">Oct 8, 2026</time></h2>
+      <ul>
+        <li>Sort your armor by the stats your build needs.</li>
+        <li>Flags pieces you can shard because you own a better one of the same kind.</li>
+        <li>Shows how close you are to each set bonus.</li>
+      </ul>
+
+      <h2>A page for every weapon <time datetime="2026-10-08">Oct 8, 2026</time></h2>
+      <ul>
+        <li>Every gun has its own page with its PvE and PvP god rolls, best trait combos and how to get it.</li>
+        <li>New <a href="guide.html">guide</a> to how rolls are scored.</li>
+      </ul>
+
+      <h2>New look <time datetime="2026-10-07">Oct 7, 2026</time></h2>
+      <ul>
+        <li>Redesigned site with a new logo.</li>
+        <li>My inventory can sort by your own kill counts.</li>
+      </ul>
+
+      <h2>Earlier</h2>
+      <ul>
+        <li>Score your whole vault, find your best copy of each gun, and switch perks in game.</li>
+        <li>Xûr's weapons, scored each week.</li>
+        <li>Compare guns side by side and see usage rankings by type.</li>
+        <li>Weapon stats, usage over time and favorites.</li>
+      </ul>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <p>Made by Halo Legend 159 · <a href="changelog.html">What's new</a> · <a href="https://github.com/HaloLegend159/Roll-Scorer/issues" target="_blank" rel="noopener">Report a bug</a> · <a href="w/">All weapons</a> · <a href="guide.html">Guide</a></p>
+    <p>Roll data from the <a href="https://github.com/48klocs/dim-wish-list-sources">DIM community wish list</a>. Weapon data from the Bungie API. Not affiliated with Bungie.</p>
+    <p id="meta" class="muted"></p>
+  </footer>
+
+  <script>
+    var tip = document.getElementById('tip');
+    if (tip && !/YOUR-NAME/.test(tip.getAttribute('href'))) tip.hidden = false;
+  </script>
+</body>
+</html>

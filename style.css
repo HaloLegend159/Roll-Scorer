@@ -575,7 +575,7 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 .hero p { max-width: 36rem; }
 
 /* Site name in the logo's blue */
-.brand, a.brand { color: #4aa3f8; }
+.brand, a.brand { color: #0cc0df; }
 
 /* Score: white number, the grade as a solid tag in its color, neutral bars */
 .score { border-top: 3px solid var(--grade, var(--line-strong)); }
