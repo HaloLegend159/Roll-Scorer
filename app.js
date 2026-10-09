@@ -57,6 +57,11 @@
       return `<li><span>${esc(t)}</span><a href="/w/${encodeURIComponent(w.id)}/">${esc(w.name)}</a></li>`;
     }).join('');
     $('#by-type').hidden = !types.length;
+
+    // Banner art for the top of the page: the most used gun's in-game screenshot
+    fetch(`/data/w/${encodeURIComponent(top[0].id)}.json`).then(r => (r.ok ? r.json() : null)).then(w => {
+      if (w?.screenshot) $('#empty').style.setProperty('--shot', `url("${BUNGIE + w.screenshot}")`);
+    }).catch(() => {});
   }
 
   async function loadWeapon(id, picksFromUrl, availFromUrl) {
