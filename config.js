@@ -13,9 +13,9 @@ window.ROLL_SCORER_CONFIG = {
   // These are safe to be public; the rules you paste into Firestore decide what anyone can do.
   // Leave PASTE in place and the vote box stays hidden.
   firebase: {
-    apiKey: 'PASTE_API_KEY',
-    authDomain: 'PASTE_PROJECT_ID.firebaseapp.com',
-    projectId: 'PASTE_PROJECT_ID',
-    appId: 'PASTE_APP_ID',
+    apiKey: 'AIzaSyCg8RTDO_TFE0vxfhQH9OtMZaSJch07LfA',
+    authDomain: 'd2rollcheck.firebaseapp.com',
+    projectId: 'd2rollcheck',
+    appId: '1:693893018513:web:e2908455d7476db50d6030',
   },
 };
