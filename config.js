@@ -9,4 +9,13 @@ window.ROLL_SCORER_CONFIG = {
   // "Move or equip Destiny gear and other items" scope ticked on the Bungie app.
   // Set to false to turn the Apply buttons off.
   allowPerkChanges: true,
+  // Votes on "Is this score right?". From Firebase console > Project settings > Your apps > Web app.
+  // These are safe to be public; the rules you paste into Firestore decide what anyone can do.
+  // Leave PASTE in place and the vote box stays hidden.
+  firebase: {
+    apiKey: 'PASTE_API_KEY',
+    authDomain: 'PASTE_PROJECT_ID.firebaseapp.com',
+    projectId: 'PASTE_PROJECT_ID',
+    appId: 'PASTE_APP_ID',
+  },
 };

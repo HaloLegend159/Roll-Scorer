@@ -707,3 +707,21 @@ button, input, select, textarea { font-family: inherit; }
   50%      { opacity: .9; transform: scale(1) rotate(20deg); filter: brightness(.6); }
 }
 @media (prefers-reduced-motion: reduce) { .tip::before, .tip::after { animation: none !important; } }
+
+/* "Is this score right?" under the score */
+.vote { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.vote-q { margin: 0 0 0.6rem; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; color: var(--soft); }
+.vote-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.vote-btns button { padding: 0.5rem 1.15rem; font-size: 0.9rem; line-height: 1.2; min-height: 0; }
+.vote-note, .vote-hint { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--muted); }
+.vote-hint { color: var(--gold); }
+.vote-done { margin: 0; font-size: 0.9rem; color: var(--soft); }
+.vote-done b { color: var(--text); }
+.vote .link { background: none; border: 0; padding: 0; margin-left: 0.35rem; color: var(--gold); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.vote-form { display: grid; gap: 0.7rem; }
+.vote-range { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 0.3rem 0.75rem; font-size: 0.9rem; color: var(--soft); }
+.vote-range output { font-family: var(--display); font-weight: 700; font-size: 1.6rem; color: var(--text); line-height: 1; }
+.vote-range input { grid-column: 1 / -1; width: 100%; accent-color: var(--gold); }
+.vote-form textarea { width: 100%; resize: vertical; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: 2px; padding: 0.55rem 0.65rem; font: inherit; font-size: 0.9rem; }
+.vote-form textarea:focus { outline: none; border-color: var(--gold); }
+.vote-form .check { font-size: 0.82rem; color: var(--muted); }

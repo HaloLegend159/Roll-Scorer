@@ -523,8 +523,18 @@
       `<p class="why">${why}${missing}</p>` +
       usageSummary(r) +
       `<ul class="bars" aria-label="Perk strength by column">${bars}</ul>` + bestPossibleHtml(r.total) + closest +
-      '';
+      '<div class="vote-slot"></div>';
     wireBestPossible();
+    // "Is this score right?" once both traits are picked
+    const traitsPicked = cols.every((c, ci) => c.weight < 3 || state.picks[ci] !== null);
+    if (traitsPicked && window.RollVote) {
+      const perks = cols.map((c, ci) => (state.picks[ci] === null ? '' : perkByIndex(state.picks[ci]).name));
+      window.RollVote.render(el.querySelector('.vote-slot'), {
+        key: `${state.weapon.id}|${state.mode}|${perks.join('|')}`,
+        weapon: state.weapon.id, weaponName: state.weapon.name, mode: state.mode,
+        perks, score: r.total, grade: label,
+      });
+    }
   }
 
   // Curator notes for the matching (or closest) recommended roll

@@ -84,7 +84,9 @@
     // Signed in from another page (e.g. Xûr): send them back there
     let back = null;
     try { back = sessionStorage.getItem('rs-return'); sessionStorage.removeItem('rs-return'); } catch {}
-    if (back && /^[\w-]+\.html$/.test(back)) { location.replace(back); await new Promise(() => {}); }
+    // A page name (xur.html) or a path on this site (/w/fatebringer/#/...), never another site
+    const safe = back && (/^[\w-]+\.html$/.test(back) || (/^\/(?![\/\\])/.test(back) && !/[\s\\]/.test(back)));
+    if (safe) { location.replace(back); await new Promise(() => {}); }
   }
 
   class AuthError extends Error {}
@@ -175,6 +177,7 @@
     loading('Checking your rolls…');
     await scoreAll();
     buildTypeFilter();
+    buildWhereFilter();
     show('inv');
     render();
   }
@@ -275,6 +278,21 @@
       types.map(t => `<option ${t === cur ? 'selected' : ''}>${esc(t)}</option>`).join('');
   }
 
+  // Location: anywhere, all characters, one character, or the vault (Postmaster has its own filter)
+  function buildWhereFilter() {
+    const sel = $('#f-where');
+    const cur = sel.value;
+    const classes = [...new Set(state.items.filter(x => x.where !== 'Vault').map(x => x.where))].sort();
+    const opts = [['', 'Anywhere'], ['chars', 'On my characters'], ...classes.map(c => [`c:${c}`, `On my ${c}`]), ['vault', 'In the vault']];
+    sel.innerHTML = opts.map(([v, t]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  }
+  function inWhere(x, w) {
+    if (!w) return true;
+    if (w === 'vault') return x.where === 'Vault';
+    if (x.where === 'Vault' || x.postmaster) return false;
+    return w === 'chars' || w === `c:${x.where}`;
+  }
+
   function isShard(item) {
     const s = item.scores[state.mode];
     if (s.total === null) return false;
@@ -288,6 +306,7 @@
 
     const term = $('#f-name').value.trim().toLowerCase();
     const type = $('#f-type').value;
+    const where = $('#f-where').value;
     const dupes = $('#f-dupes').checked;
     const shard = $('#f-shard').checked;
     const sort = $('#f-sort').value;
@@ -301,6 +320,7 @@
     let rows = state.items.filter(x =>
       (!term || x.ctx.w.name.toLowerCase().includes(term)) &&
       (!type || x.ctx.w.type === type) &&
+      inWhere(x, where) &&
       (!dupes || x.copies > 1) &&
       (!post || x.postmaster) &&
       (!favOnly || favs.has(x.id)) &&
@@ -475,7 +495,7 @@
     await scoreAll();
     render();
   }));
-  ['#f-name', '#f-type', '#f-sort', '#f-dupes', '#f-shard', '#f-post', '#f-fav'].forEach(sel =>
+  ['#f-name', '#f-type', '#f-where', '#f-sort', '#f-dupes', '#f-shard', '#f-post', '#f-fav'].forEach(sel =>
     $(sel).addEventListener(sel === '#f-name' ? 'input' : 'change', render));
 
   start();
