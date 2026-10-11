@@ -666,3 +666,44 @@ pre.debug { margin-top: 1rem; padding: 1rem; background: var(--panel); border: 1
 
 /* Barlow everywhere, including form controls */
 button, input, select, textarea { font-family: inherit; }
+
+/* Tip jar: an engraved gold coin. Every few seconds it is flicked up, spins, catches the light,
+   lands with a little squash and throws off sparkles. Hovering keeps it spinning in the air. */
+.tip { position: relative; padding-left: 2.25rem; transition: background .2s, color .2s; }
+.tip::before, .tip::after { content: ''; position: absolute; pointer-events: none; background-repeat: no-repeat; background-size: contain; }
+.tip::before {
+  left: 0.65rem; top: 50%; width: 1.05rem; height: 1.05rem; margin-top: -0.525rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E %3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff4cf'/%3E%3Cstop offset='.3' stop-color='%23f6c860'/%3E%3Cstop offset='.68' stop-color='%23cf8f22'/%3E%3Cstop offset='1' stop-color='%237d4f0e'/%3E%3C/linearGradient%3E %3ClinearGradient id='b' x1='1' y1='1' x2='0' y2='0'%3E%3Cstop offset='0' stop-color='%23fff0bf'/%3E%3Cstop offset='.35' stop-color='%23eab54a'/%3E%3Cstop offset='1' stop-color='%239a6514'/%3E%3C/linearGradient%3E%3C/defs%3E %3Ccircle cx='16' cy='16' r='15.2' fill='url%28%23a%29' stroke='%236e440c' stroke-width='.8'/%3E %3Ccircle cx='16' cy='16' r='11.6' fill='url%28%23b%29'/%3E %3Ccircle cx='16' cy='16' r='11.6' fill='none' stroke='%23fff6d8' stroke-opacity='.45' stroke-width='.6' stroke-dasharray='1.2 1.6'/%3E %3Cpath d='M16 7.6 18.1 13.9 24.4 16 18.1 18.1 16 24.4 13.9 18.1 7.6 16 13.9 13.9Z' fill='url%28%23a%29' stroke='%237d4f0e' stroke-width='.5'/%3E %3Cpath d='M5.6 12.4A11 11 0 0 1 12.6 5.2' fill='none' stroke='%23fff' stroke-opacity='.85' stroke-width='1.5' stroke-linecap='round'/%3E %3C/svg%3E");
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.6));
+  animation: tip-toss 6s linear 1s infinite;
+}
+.tip::after {
+  left: calc(0.65rem + 0.525rem - 1.2rem); top: 50%; width: 2.4rem; height: 2.4rem; margin-top: -1.2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='%23ffe3a1'%3E %3Cpath d='M10 14 11.2 18.8 16 20 11.2 21.2 10 26 8.8 21.2 4 20 8.8 18.8Z'/%3E %3Cpath d='M52 8 53 12 57 13 53 14 52 18 51 14 47 13 51 12Z'/%3E %3Cpath d='M56 44 57.4 49.6 63 51 57.4 52.4 56 58 54.6 52.4 49 51 54.6 49.6Z'/%3E %3Cpath d='M12 50 12.8 53.2 16 54 12.8 54.8 12 58 11.2 54.8 8 54 11.2 53.2Z'/%3E %3Ccircle cx='33' cy='4' r='1.6'/%3E%3Ccircle cx='3' cy='38' r='1.2'/%3E%3Ccircle cx='61' cy='30' r='1.3'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0; transform: scale(.3);
+  animation: tip-spark 6s ease-out 1s infinite;
+}
+@keyframes tip-toss {
+  0%, 56%  { transform: perspective(80px) translate(0, 0) rotateY(0deg); animation-timing-function: cubic-bezier(.2,.7,.3,1); }
+  58%      { transform: perspective(80px) translate(0, 1px) scale(1.08, .88) rotateY(0deg); animation-timing-function: cubic-bezier(.15,.75,.35,1); }
+  65%      { transform: perspective(80px) translate(2px, -17px) rotateY(540deg); filter: drop-shadow(0 0 5px rgba(255,214,120,.9)) brightness(1.3); animation-timing-function: cubic-bezier(.6,0,.85,.4); }
+  72%      { transform: perspective(80px) translate(0, 0) rotateY(1080deg) scale(1.15, .8); filter: drop-shadow(0 1px 1px rgba(0,0,0,.6)); animation-timing-function: cubic-bezier(.2,.7,.3,1); }
+  75.5%    { transform: perspective(80px) translate(0, -4px) rotateY(1080deg) scale(.94, 1.06); animation-timing-function: cubic-bezier(.6,0,.85,.4); }
+  79%, 100% { transform: perspective(80px) translate(0, 0) rotateY(1080deg); }
+}
+@keyframes tip-spark {
+  0%, 71%  { opacity: 0; transform: scale(.3) rotate(0deg); }
+  74%      { opacity: 1; transform: scale(.9) rotate(12deg); }
+  84%, 100% { opacity: 0; transform: scale(1.25) rotate(25deg); }
+}
+.tip:hover::before { animation: tip-hover 1.4s cubic-bezier(.45,0,.55,1) infinite; filter: drop-shadow(0 0 1px #0e0f11) drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+.tip:hover::after { animation: tip-twinkle 1.4s ease-in-out infinite; }
+@keyframes tip-hover {
+  0%, 100% { transform: perspective(80px) translateY(0) rotateY(0deg); }
+  50%      { transform: perspective(80px) translateY(-5px) rotateY(360deg); }
+}
+@keyframes tip-twinkle {
+  0%, 100% { opacity: 0; transform: scale(.7) rotate(0deg); filter: brightness(.6); }
+  50%      { opacity: .9; transform: scale(1) rotate(20deg); filter: brightness(.6); }
+}
+@media (prefers-reduced-motion: reduce) { .tip::before, .tip::after { animation: none !important; } }
