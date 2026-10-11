@@ -92,7 +92,23 @@
       }
       throw err;
     }
-    mine[roll.key] = { agree: v.agree, suggested: data.suggested, at: Date.now() };
+    mine[roll.key] = { agree: v.agree, suggested: data.suggested, comment: data.comment, shareOk: data.shareOk, at: Date.now() };
+    write(MINE_KEY, mine);
+  }
+
+  // Take a vote back completely
+  async function remove(roll) {
+    const me = await who();
+    if (!me) throw Object.assign(new Error('signin'), { signin: true });
+    const { db, fs } = await firebase();
+    try {
+      await fs.deleteDoc(fs.doc(db, 'votes', await docId(me.id, roll.key)));
+    } catch (err) {
+      if (err?.code === 'permission-denied') throw new Error('That vote was made from another browser or device, so remove it there.');
+      throw err;
+    }
+    const mine = read(MINE_KEY) || {};
+    delete mine[roll.key];
     write(MINE_KEY, mine);
   }
 
@@ -106,18 +122,36 @@
     box.className = 'vote';
     slot.replaceChildren(box);
 
+    const current = () => (read(MINE_KEY) || {})[roll.key];
+
     const ask = () => {
+      const had = current();
       box.innerHTML = `<p class="vote-q">Is this score right?</p>
         <div class="vote-btns"><button type="button" class="ghost" data-v="yes">Yes</button><button type="button" class="ghost" data-v="no">No</button></div>
-        ${signedIn ? '' : '<p class="vote-note">You\'ll sign in with Bungie first, so each player gets one vote.</p>'}`;
+        ${signedIn ? '' : '<p class="vote-note">You\'ll sign in with Bungie first, so each player gets one vote.</p>'}
+        ${had ? '<p class="vote-note"><button type="button" class="link" data-v="keep">Keep my vote</button></p>' : ''}`;
       box.querySelector('[data-v="yes"]').onclick = () => go({ agree: true });
-      box.querySelector('[data-v="no"]').onclick = form;
+      box.querySelector('[data-v="no"]').onclick = () => form(current() || {});
+      if (had) box.querySelector('[data-v="keep"]').onclick = () => done(had);
     };
 
-    const done = (v, extra = '') => {
-      box.innerHTML = `<p class="vote-done">${v.agree ? 'You said this score is right.' : `You'd give it <b>${v.suggested}</b>.`} Thanks, noted.${extra}
-        <button type="button" class="link">Change</button></p>`;
-      box.querySelector('.link').onclick = ask;
+    const done = v => {
+      box.innerHTML = `<p class="vote-done">${v.agree ? 'You said this score is right.' : `You'd give it <b>${v.suggested}</b>.`} Thanks, noted.</p>
+        <p class="vote-note"><button type="button" class="link" data-v="change">Change</button><button type="button" class="link" data-v="remove">Remove my vote</button></p>`;
+      box.querySelector('[data-v="change"]').onclick = ask;
+      box.querySelector('[data-v="remove"]').onclick = async () => {
+        box.innerHTML = '<p class="vote-done">Removing…</p>';
+        try {
+          await remove(roll);
+          ask();
+        } catch (err) {
+          if (err.signin) return signIn(null);
+          console.error(err);
+          box.innerHTML = `<p class="vote-done">${esc(err.message && !/firebase|firestore/i.test(err.message) ? err.message : 'Couldn\'t remove it. Try again in a moment.')}</p>
+            <p class="vote-note"><button type="button" class="link">Back</button></p>`;
+          box.querySelector('.link').onclick = () => done(v);
+        }
+      };
     };
 
     const form = (prev = {}) => {

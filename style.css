@@ -717,7 +717,7 @@ button, input, select, textarea { font-family: inherit; }
 .vote-hint { color: var(--gold); }
 .vote-done { margin: 0; font-size: 0.9rem; color: var(--soft); }
 .vote-done b { color: var(--text); }
-.vote .link { background: none; border: 0; padding: 0; margin-left: 0.35rem; color: var(--gold); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.vote .link { background: none; border: 0; padding: 0; margin-right: 1rem; color: var(--gold); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .vote-form { display: grid; gap: 0.7rem; }
 .vote-range { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 0.3rem 0.75rem; font-size: 0.9rem; color: var(--soft); }
 .vote-range output { font-family: var(--display); font-weight: 700; font-size: 1.6rem; color: var(--text); line-height: 1; }
